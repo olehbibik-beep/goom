@@ -10,6 +10,7 @@
   try{const candidate=new URLSearchParams(location.search).get('lang')||localStorage.getItem('goom.site.language');if(text[candidate])language=candidate;}catch{}
   const tr=key=>text[language][key]||text.cs[key]||key;
   function renderPreview(){
+    if(!document.getElementById('demoPaper'))return;
     document.getElementById('demoPaper').dataset.product=preview;
     document.querySelectorAll('[data-preview]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.preview===preview)));
     document.getElementById('demoCategory').textContent=tr(preview==='cctv'?'demoCctv':'demoPzts');

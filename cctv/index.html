@@ -1,0 +1,1208 @@
+<!DOCTYPE html>
+<html lang="cs" data-goom-product="CCTV">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GooM CCTV</title>
+    <link rel="icon" type="image/png" href="Logo2.png?v=20261115-35">
+    <script>
+        (() => {
+            window.goomProduct = 'CCTV';
+            if (location.hostname === 'cctv.five.surf' && location.protocol === 'http:') {
+                const secureUrl = new URL(location.href);
+                secureUrl.protocol = 'https:';
+                secureUrl.port = '';
+                location.replace(secureUrl.href);
+            }
+        })();
+    </script>
+    <script src="i18n.js?v=20261118-cctv-goom-paths-69"></script>
+    <script src="device-support.js?v=20261118-cctv-goom-paths-69"></script>
+    <link rel="stylesheet" href="viewer-map.css?v=20261118-cctv-goom-paths-69">
+    <style>
+        :root {
+            --bg-main: #121214; --bg-toolbar: #1c1c1f; --bg-input: #252529;
+            --text-main: #e1e1e6; --text-muted: #8d8d99;
+            --btn-cad-bg: #2a2a30;
+            --help-bg: #252529;
+            --help-bg-hover: #3a3a40;
+            --help-text-color: #8d8d99;
+            --color-help-highlight: #22c55e; 
+        }
+
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: var(--bg-main); color: var(--text-main); margin: 0; display: flex; flex-direction: column; height: 100vh; height: 100dvh; overflow: hidden; }
+        [hidden] { display: none !important; }
+        #deviceSupportNotice { display: none; }
+        .device-blocked body > :not(#deviceSupportNotice) { display: none !important; }
+        .device-blocked #deviceSupportNotice { display: flex; position: fixed; inset: 0; box-sizing: border-box; align-items: center; justify-content: center; padding: 24px; background: #121214; z-index: 1000000; }
+        .device-support-card { width: min(480px, 100%); padding: clamp(24px, 5vw, 40px); box-sizing: border-box; border: 1px solid #35353d; border-radius: 16px; background: #1c1c1f; }
+        .device-support-logo { display: block; width: min(118px, 42vw, 42dvh); height: auto; }
+        .device-blocked[data-device="phone"] #deviceSupportNotice { display: grid; grid-template-rows: 1fr auto 1fr; justify-items: center; background: #252529; text-align: center; }
+        .device-blocked[data-device="phone"] .device-support-card { display: contents; }
+        [data-device="phone"] .device-support-logo { grid-row: 2; }
+        [data-device="phone"] #deviceSupportTitle { grid-row: 3; align-self: end; margin: 0 0 max(12px, env(safe-area-inset-bottom)); font-size: clamp(15px, 4.4vw, 19px); font-weight: 500; }
+        [data-device="phone"] #deviceSupportMessage { display: none; }
+        .device-support-card h1 { font-size: clamp(22px, 5vw, 28px); line-height: 1.25; }
+        .device-support-card p { margin-bottom: 0; color: #c4c4cc; line-height: 1.6; overflow-wrap: anywhere; }
+        body::after {
+            content: ''; position: fixed; inset: 0; z-index: 999998; pointer-events: none;
+            border: 2px solid transparent; border-radius: 8px; box-sizing: border-box;
+            background: linear-gradient(135deg, #b6a4cc 0%, #b6a4cc 18%, #8b5cf6 82%, #a855f7 100%) border-box;
+            -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+            mask-composite: exclude;
+            box-shadow: inset 0 0 10px rgba(155, 136, 180, 0.08), 0 0 10px rgba(168, 85, 247, 0.08);
+        }
+        
+        .toolbar { background: var(--bg-toolbar); display: flex; flex-direction: column; z-index: 10; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        
+       /* СДВИГАЕМ ЛОГОТИП ВПРАВО, освобождая место для язычка */
+        .app-title { 
+            font-size: 16px; font-weight: 700; color: var(--text-main); letter-spacing: 1px; 
+            display: flex; align-items: center; gap: 8px; 
+            padding: 6px 12px; border-radius: 6px; transition: background 0.2s; 
+            position: relative; z-index: 12; cursor: default;
+            margin-left: 75px; /* <-- Вот этот отступ отодвигает логотип */
+        }
+        .menu-logo-button {
+            position: relative; display: flex; align-items: center; justify-content: center;
+            padding: 6px; border: 0; border-radius: 6px; background: transparent; cursor: pointer;
+        }
+        .menu-logo-button:focus-visible { outline: 2px solid #b6a4cc; outline-offset: 2px; }
+        .menu-logo-button { display: grid; }
+        .menu-logo-button img { display: block; grid-area: 1 / 1; width: 28px; height: 28px; object-fit: contain; transition: opacity 0.15s ease; }
+        .menu-logo-button .menu-logo-hover { opacity: 0; }
+        .menu-logo-button:hover .menu-logo-default, .menu-logo-button:focus-visible .menu-logo-default { opacity: 0; }
+        .menu-logo-button:hover .menu-logo-hover, .menu-logo-button:focus-visible .menu-logo-hover { opacity: 1; }
+        .app-brand-name { color: var(--text-main); }
+        .app-tooltip {
+            position: fixed; display: none; z-index: 2000; pointer-events: none;
+            padding: 7px 14px; border: 0; border-radius: 6px; background: #ffffff;
+            color: #2f3437; font-size: 12px; font-weight: 600; white-space: nowrap;
+            box-shadow: none; transition: none;
+        }
+        
+        .toolbar-row { display: flex; padding: 8px 20px; gap: 20px; align-items: center; box-sizing: border-box; position: relative; z-index: 10; }
+        
+        /* Светлое полупрозрачное меню */
+        .sliding-row-container { 
+            position: absolute; top: 100%; left: 0; width: 100%; 
+            max-height: 0; overflow: hidden; 
+            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            background: rgba(244, 244, 245, 0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            z-index: 9; 
+        }
+        .sliding-row-container.open { max-height: 160px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+
+        /* ЯЗЫЧОК-СТРЕЛОЧКА (ОТ САМОГО ВЕРХА) */
+        .arrow-tab { 
+            position: absolute; 
+            top: 0; left: 15px; /* Прижимаем к левому краю и верху */
+            background: #b6a4cc; /* Matte lavender */
+            border: none; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            width: 65px; 
+            height: 60px; /* Высота язычка (перекрывает меню и свисает вниз) */
+            border-radius: 0 0 12px 12px; 
+            color: #121214; /* Темная стрелочка */
+            cursor: pointer; z-index: 20; 
+            display: flex; justify-content: center; align-items: flex-end; /* Опускаем стрелочку в самый низ */
+            padding-bottom: 6px; box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+        .arrow-tab:hover { background: #b6a4cc; }
+        .arrow-tab svg { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); width: 22px; height: 22px; }
+        .arrow-tab.open svg { transform: rotate(180deg); }
+        .arrow-tab.open { background: #9b88b4; color: #ffffff; }
+        
+        /* Device toolbar on a light background. */
+        .sliding-row-container .device-selector-group { 
+            background: #ffffff; border: 1px solid #e4e4e7; box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
+        }
+        .sliding-row-container .device-btn:hover { background: #f4f4f5; }
+        .sliding-row-container .device-btn.active { background: #e4e4e7; box-shadow: none; }
+        .sliding-row-container .menu-divider { background: #e4e4e7; }
+
+        .toolbar-section { display: flex; align-items: center; gap: 8px; }
+        
+        select { background: var(--bg-input); color: var(--text-main); border: none; padding: 6px 12px; border-radius: 4px; font-size: 14px; font-weight: bold; outline: none; cursor: pointer; width: 100px; text-align: center; }
+        #loopSelect { box-sizing: border-box; width: 128px; min-width: 128px; padding: 6px 28px 6px 10px; text-align: left; }
+        input[type="text"], input[type="number"] { background: var(--bg-input); color: var(--text-main); border: none; padding: 6px 10px; border-radius: 4px; font-size: 13px; outline: none; font-weight: bold;}
+        
+        :is(button, a).btn-cad { background: var(--btn-cad-bg); color: var(--text-main); border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; transition: 0.2s; font-weight: 500; font-size: 13px; display: flex; align-items: center; gap: 10px; }
+        :is(button, a).btn-cad:hover { background: #35353d; }
+        a.btn-cad { box-sizing: border-box; justify-content: center; text-decoration: none; }
+        button.btn-cad svg { width: 18px; height: 18px; }
+
+        .device-selector-group { display: flex; gap: 6px; background: rgba(37, 37, 41, 0.5); padding: 6px; border-radius: 8px; border: none; flex-wrap: wrap; justify-content: center; align-items: center; max-width: 1400px;}
+        
+        .device-btn { background: transparent; border: none; padding: 6px; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.1s;}
+        .device-btn:hover { background: var(--bg-input); }
+        .device-btn.active { background: var(--btn-cad-bg); box-shadow: none; }
+
+        .device-tooltip {
+            display: flex; flex-direction: column; align-items: center; gap: 7px;
+            min-width: 180px; max-width: 280px; padding: 18px 26px;
+            background: #ffffff; border: 0; border-radius: 6px;
+            color: #2f3437; text-align: center;
+            box-shadow: none; transition: none;
+        }
+        .device-tooltip #ttType { font-size: 14px; font-weight: 700; color: #2f3437; }
+        .device-tooltip #ttNumber, .device-tooltip #ttLoop, .device-tooltip #ttName {
+            font-size: 13px; color: #2f3437;
+        }
+        .device-tooltip #ttName { font-style: italic; }
+        .device-tooltip #ttNumber span { color: #555b60; font-size: 11px; }
+
+        .menu-divider { width: 2px; background: var(--bg-input); height: 24px; margin: 0 4px; border-radius: 2px; }
+
+        .canvas-container { flex: 1; min-height: 0; background: #0f0f11; position: relative; overflow: hidden; cursor: crosshair; display: flex; touch-action: none; }
+        canvas { display: block; position: absolute; top: 0; left: 0; }
+
+        .modal { display: none; position: fixed; z-index: 300; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); align-items: center; justify-content: center; }
+        .modal-content { background: rgba(28, 28, 31, 0.95); border: none; padding: 30px; border-radius: 12px; max-width: 450px; width: 100%; max-height: calc(100dvh - 40px); overflow-y: auto; box-sizing: border-box; color: var(--text-main); box-shadow: 0 20px 50px rgba(0,0,0,0.7); }
+        #welcomeModal { padding: 24px; box-sizing: border-box; }
+        #welcomeModal .welcome-card {
+            box-sizing: border-box; width: min(920px, calc(100vw - 48px)); max-width: 920px;
+            height: min(720px, calc(100dvh - 48px)); min-height: 0; padding: 0; overflow: visible;
+            display: flex; flex-direction: row; position: relative; border-radius: 0;
+            border: 0; background: transparent; box-shadow: none; isolation: isolate;
+        }
+        #welcomeModal .welcome-card::before { display: none; }
+        .welcome-controls { position: absolute; top: 0; left: 0; right: 0; z-index: 3; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px; pointer-events: none; }
+        .welcome-controls > * { pointer-events: auto; }
+        .welcome-back { width: 42px; height: 42px; padding: 10px; border: 0; border-radius: 50%; background: rgba(18,18,20,0.8); color: #fff; cursor: pointer; }
+        .welcome-back svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; }
+        .language-picker { margin-left: auto; background: #252529; color: #f4f4f5; border: 1px solid #52525b; padding: 8px; font-size: 12px; border-radius: 6px; }
+        #welcomeModal .welcome-panel {
+            box-sizing: border-box; z-index: 1; display: flex; flex: 0 0 410px;
+            flex-direction: column; justify-content: safe center; padding: 64px 32px 28px; overflow-y: auto;
+            background: linear-gradient(90deg, rgba(12,13,17,0.94) 0%, rgba(12,13,17,0.88) 80%, rgba(12,13,17,0) 100%);
+        }
+        #welcomeModal .welcome-brand { font-size: 34px; font-weight: 800; color: #fff; letter-spacing: 0.5px; margin-bottom: 4px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        #welcomeModal .welcome-edition { font-size: 11px; color: #22c55e; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 26px; }
+        #welcomeModal .welcome-actions { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+        #welcomeModal [hidden] { display: none !important; }
+        #welcomeModal .welcome-heading { margin: 0; font-size: 20px; }
+        #welcomeModal .welcome-description { margin: 0 0 8px; color: #c4c4cc; font-size: 13px; line-height: 1.5; }
+        #googleAuthMessage { margin: 0; color: #fca5a5; font-size: 13px; line-height: 1.5; }
+        #googleAuthMessage[data-state="checking"] { color: #c4c4cc; }
+        #welcomeModal .welcome-actions .btn-cad { width: 100%; min-height: 48px; box-sizing: border-box; padding: 12px 16px; justify-content: flex-start; border-radius: 6px; font-size: 14px; }
+        #welcomeModal .welcome-actions svg { width: 18px; height: 18px; margin-right: 10px; flex: 0 0 auto; }
+        #welcomeModal .welcome-auth-status { display: none; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 6px; background: rgba(15,23,42,0.72); color: #d4d4d8; font-size: 12px; overflow-wrap: anywhere; }
+        #welcomeModal .welcome-signout { align-self: flex-start; padding: 5px 8px; background: transparent; color: #c4c4cc; font-size: 12px; }
+        #welcomeModal .welcome-naming { display: none; flex-direction: column; gap: 12px; width: 100%; }
+        .email-auth-form, .account-form { display: flex; flex-direction: column; gap: 12px; }
+        .email-auth-form label, .account-form label { display: flex; flex-direction: column; gap: 5px; color: #d4d4d8; font-size: 12px; }
+        .account-input { box-sizing: border-box; width: 100%; min-height: 40px; border: 1px solid #52525b; border-radius: 6px; padding: 9px 11px; background: rgba(18,18,20,0.9); color: #fff; font: inherit; }
+        .auth-link { border: 0; background: transparent; color: #a5d8fa; cursor: pointer; padding: 5px 0; text-align: left; font: inherit; font-size: 12px; }
+        .auth-primary { justify-content: center; background: #9b88b4; color: #fff; }
+        #welcomeEmailBlock .welcome-description { font-size: 12px; }
+        #welcomeModal[data-step="email"] .welcome-panel { justify-content: flex-start; }
+        #welcomeModal[data-step="email"] .welcome-brand { font-size: 26px; }
+        #welcomeModal[data-step="email"] .welcome-edition { margin-bottom: 12px; }
+        #welcomeModal[data-step="email"] .welcome-copyright { display: none; }
+        #emailAuthForm[data-mode="register"] { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px 12px; }
+        #emailAuthForm[data-mode="register"] > * { grid-column: 1 / -1; }
+        #emailAuthForm[data-mode="register"] > :is(#emailPasswordField, #emailConfirmField, #emailTypeField, #emailIcoField) { grid-column: auto; }
+        #userAccountModal { z-index: 450; padding: 20px; box-sizing: border-box; }
+        .account-card { max-width: 520px; }
+        .account-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+        .account-header h2 { margin: 0; font-size: 20px; }
+        .account-details { display: grid; grid-template-columns: 110px minmax(0,1fr); gap: 8px 12px; margin: 0 0 18px; font-size: 13px; }
+        .account-details dt { color: #a1a1aa; }
+        .account-details dd { margin: 0; overflow-wrap: anywhere; }
+        .account-cloud { margin-top: 20px; padding-top: 16px; border-top: 1px solid #35353d; }
+        .account-cloud h3 { margin: 0 0 10px; font-size: 15px; }
+        .account-note, #accountFeedback { font-size: 12px; color: #c4c4cc; line-height: 1.5; }
+        #accountFeedback[data-error="true"] { color: #fca5a5; }
+        .account-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        #welcomeModal .welcome-project-name { width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 6px; }
+        #welcomeModal .welcome-name-buttons { display: flex; gap: 10px; margin-top: 4px; }
+        #welcomeModal .welcome-name-buttons .btn-cad { flex: 1; justify-content: center; padding: 11px; }
+        #welcomeModal .welcome-copyright { margin-top: 38px; font-size: 11px; color: #c4c4cc; font-family: monospace; }
+        #welcomeModal .welcome-art-space { flex: 1 1 auto; pointer-events: none; }
+        #welcomeModal .welcome-auth-button { background: rgba(37,37,41,0.82); color: #f4f4f5; border: 1px solid rgba(255,255,255,0.22); }
+        #cloudSyncIndicator { max-width: 220px; overflow: hidden; color: #8d8d99; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+        #cloudSyncIndicator[data-state="saved"] { color: #86efac; }
+        #cloudSyncIndicator[data-state="syncing"] { color: #b6a4cc; }
+        #cloudSyncIndicator[data-state="error"], #cloudSyncIndicator[data-state="conflict"] { color: #fca5a5; }
+        .cloud-projects-content { box-sizing: border-box; max-width: 720px; max-height: min(720px, calc(100vh - 40px)); overflow: auto; }
+        #cloudProjectsModal { z-index: 400; justify-content: flex-end; padding: 12px; box-sizing: border-box; }
+        #cloudProjectsModal .cloud-projects-content { width: min(470px, 100%); max-height: 100%; padding: 18px; }
+        #btnCloudProjectsClose { flex: none; align-self: flex-start; }
+        .project-location-icon { width: 16px; height: 16px; flex: none; color: #b5b6bf; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+        .cloud-project-row.current { border-color: #82d322; }
+        #cloudProjectCount { color: #a1a1aa; font: 12px system-ui; white-space: nowrap; }
+        .cloud-projects-header, .cloud-projects-toolbar, .cloud-project-row, .cloud-project-actions { display: flex; align-items: center; gap: 12px; }
+        .cloud-projects-header, .cloud-projects-toolbar { justify-content: space-between; }
+        .cloud-projects-header { margin-bottom: 12px; }
+        .cloud-projects-header .modal-title { margin: 0; }
+        #cloudProjectsStatus { min-height: 20px; margin: 0 0 12px; color: #a1a1aa; font-size: 12px; overflow-wrap: anywhere; }
+        #cloudProjectsList { display: flex; flex-direction: column; gap: 8px; max-height: 52vh; overflow-y: auto; }
+        .cloud-project-row { justify-content: space-between; padding: 12px; border: 1px solid #35353d; border-radius: 8px; }
+        .cloud-project-details { display: flex; min-width: 0; flex-direction: column; gap: 5px; overflow-wrap: anywhere; }
+        .cloud-project-details span { color: #a1a1aa; font-size: 11px; }
+        .cloud-project-actions { flex-shrink: 0; }
+        .cloud-project-delete { background: #7f1d1d; color: #fff; }
+        .cloud-projects-toolbar { margin-bottom: 12px; }
+        .cloud-projects-toolbar .btn-cad { justify-content: center; }
+        @media (max-width: 560px) {
+            #cloudSyncIndicator { display: none; }
+            .cloud-project-row { align-items: stretch; flex-direction: column; }
+            .cloud-project-actions { justify-content: flex-end; }
+        }
+        .app-dialog-backdrop { position: fixed; inset: 0; z-index: 10010; display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; background: rgba(0,0,0,0.58); backdrop-filter: blur(6px); }
+        .app-dialog-backdrop[hidden] { display: none; }
+        .app-dialog-card { width: min(420px, 100%); padding: 24px; box-sizing: border-box; border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; background: #1c1c1f; color: var(--text-main); box-shadow: 0 24px 70px rgba(0,0,0,0.6); }
+        .app-dialog-title { margin: 0 0 12px; font-size: 18px; font-weight: 700; }
+        .app-dialog-message { margin: 0 0 20px; color: #c4c4cc; font-size: 14px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .app-dialog-input { width: 100%; margin: 0 0 18px; padding: 11px 12px; box-sizing: border-box; border: 1px solid #404046; border-radius: 6px; background: #121214; color: #fff; font: inherit; }
+        .app-dialog-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
+        .app-dialog-actions button { min-width: 100px; justify-content: center; text-align: center; }
+        .app-dialog-cancel { background: #303036 !important; color: #e1e1e6 !important; }
+        .app-dialog-confirm { background: #9b88b4 !important; color: #fff !important; }
+        @media (min-width: 600px) and (max-width: 1100px) {
+            .toolbar-row { flex-wrap: wrap; gap: 8px 12px; padding: 8px 14px; }
+            .toolbar-row > .toolbar-section { margin-left: auto !important; flex-wrap: wrap; }
+            #projectNameInput { flex: 1 1 160px; min-width: 120px; max-width: 250px; }
+            #cloudSyncIndicator { max-width: 160px; }
+            .sliding-row-container.open { max-height: min(260px, 45dvh); overflow-y: auto; }
+            .device-selector-group { max-width: 100%; flex-wrap: wrap; justify-content: center; }
+            .footer { flex-shrink: 0; overflow-x: auto; }
+            .cloud-projects-toolbar { flex-wrap: wrap; }
+            #welcomeModal .welcome-panel { flex-basis: min(410px, 66%); padding: 64px 24px 24px; }
+        }
+        @media (pointer: coarse) {
+            .btn-cad, .toolbar-icon-button, .device-btn, .footer-icon { min-height: 44px; min-width: 44px; }
+            .floor-btn { min-height: 44px; }
+            #appFooter { height: auto; min-height: 44px; }
+            .canvas-container { touch-action: none; }
+        }
+        @media (max-height: 650px) {
+            #welcomeModal { padding: 16px; }
+            #welcomeModal .welcome-card { height: calc(100dvh - 32px); }
+            #welcomeModal .welcome-panel { justify-content: flex-start; padding: 58px 24px 24px; }
+            #welcomeModal .welcome-edition { margin-bottom: 18px; }
+            #welcomeModal .welcome-copyright { margin-top: 22px; }
+        }
+        #printPage { display: none; }
+        @media print {
+            @page { size: auto; margin: 8mm; }
+            html, body { display: block; margin: 0 !important; padding: 0; width: auto !important; height: auto !important; overflow: visible; background: #fff; border: 0; box-shadow: none; }
+            body > :not(#printPage) { display: none !important; }
+            body::after { display: none !important; }
+            #printPage { display: block; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            .plan-print-sheet { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 99vh; break-inside: avoid; break-after: page; }
+            .plan-print-sheet:last-child { break-after: auto; }
+            .plan-print-header { display: flex; justify-content: space-between; gap: 8mm; padding: 0 0 3mm; color: #181a1d; font-size: 10pt; overflow-wrap: anywhere; }
+            .plan-print-header span { flex: none; }
+            .plan-print-image { display: block; width: 100%; height: 100%; object-fit: contain; }
+            #printPage[data-tablet-print] .plan-print-sheet { display: block; height: auto; }
+            #printPage[data-tablet-print] .plan-print-header strong { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+            #printPage[data-tablet-print] .plan-print-image { height: auto; max-height: 174mm; }
+        }
+        #mainMenuModal .main-menu-content { box-sizing: border-box; max-width: 680px; width: min(680px, calc(100vw - 40px)); }
+        .main-menu-layout {
+            display: grid; grid-template-columns: minmax(90px, 0.75fr) minmax(140px, 1fr);
+            align-items: center; gap: 18px; margin-top: 20px;
+        }
+        .main-menu-brand { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .main-menu-brand-logo { width: clamp(56px, 10vw, 100px); height: auto; display: block; }
+        .main-menu-actions { display: flex; flex-direction: column; gap: 12px; align-items: stretch; }
+        #iconEditorModal .modal-content { max-width: 1120px; width: min(1120px, calc(100vw - 32px)); max-height: 92vh; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #77777f #242428; box-sizing: border-box; padding: 10px 12px 14px 20px; }
+        #iconEditorModal .modal-content::-webkit-scrollbar { width: 9px; }
+        #iconEditorModal .modal-content::-webkit-scrollbar-track { background: #242428; border-radius: 8px; }
+        #iconEditorModal .modal-content::-webkit-scrollbar-thumb { min-height: 28px; border: 2px solid #242428; border-radius: 8px; background: #77777f; }
+        #iconEditorModal .modal-content::-webkit-scrollbar-thumb:hover { background: #a1a1aa; }
+        #iconEditorModal .modal-title { min-height: 26px; height: 26px; justify-content: space-between; margin: 0 0 8px; padding: 0 0 4px; border-bottom: 1px solid #3f3f46; text-align: right; line-height: 20px; }
+        #iconEditorModal .modal-title span { font-size: 14px; }
+        .toolbar-menu-list-shell { display: block; margin-bottom: 2px; }
+        .toolbar-menu-presets { display: flex; flex-direction: column; gap: 4px; overflow: visible; padding: 1px 2px; }
+        .toolbar-menu-preset { min-height: 36px; padding: 2px 6px; display: flex; align-items: center; gap: 7px; border: 1px solid #3f3f46; border-radius: 6px; background: #f4f4f5; color: #252529; cursor: pointer; }
+        .toolbar-menu-preset.selected { border-color: #22c55e; box-shadow: inset 0 0 0 1px #22c55e; opacity: 1; }
+        .toolbar-menu-premium-badge { flex: none; padding: 2px 5px; border-radius: 4px; background: #f8d486; color: #272119; font-size: 9px; font-weight: 700; }
+        .toolbar-menu-preset:not(.selected) { opacity: .48; }
+        .toolbar-menu-active-indicator { width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: #a1a1aa; }
+        .toolbar-menu-active-indicator.active { background: #22c55e; }
+        .toolbar-menu-preset-name { width: 120px; min-width: 70px; padding: 5px 3px !important; border: 0 !important; border-bottom: 1px solid #d4d4d8 !important; border-radius: 0 !important; background: transparent !important; color: inherit !important; text-align: left; font-size: 11px !important; font-weight: 700 !important; }
+        .toolbar-menu-preset-icons { display: flex; align-items: center; gap: 3px; min-width: 0; min-height: 28px; overflow-x: auto; }
+        .toolbar-menu-preset-icons button { width: 30px; height: 30px; flex: 0 0 30px; display: flex; align-items: center; justify-content: center; padding: 3px; border: 1px solid transparent; border-radius: 4px; background: transparent; cursor: pointer; }
+        .toolbar-menu-preset-icons button:hover { background: #e4e4e7; }
+        .toolbar-menu-preset-icons button.selected { border-color: #22c55e; background: #dcfce7; }
+        .toolbar-menu-preset-icons img, .toolbar-menu-preset-icons svg { width: 22px; height: 22px; }
+        .toolbar-menu-remove { width: 24px; height: 26px; flex: 0 0 24px; margin-left: auto; padding: 0 !important; justify-content: center; border: 0; background: transparent; color: #71717a; font-size: 19px !important; }
+        .toolbar-menu-remove:hover:not(:disabled) { background: transparent !important; color: #ef4444; }
+        .toolbar-menu-remove:disabled { visibility: hidden; }
+        .toolbar-menu-editor-actions { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 2px 0 8px; }
+        .toolbar-menu-editor-actions .toolbar-menu-editor-actions-group { margin-left: auto; }
+        #btnToolbarMenuSave:disabled, #btnToolbarMenuPublish:disabled { opacity: .48; cursor: default; }
+        .toolbar-menu-add { width: 30px; height: 28px; min-width: 30px; padding: 0 !important; justify-content: center; border: 0 !important; background: transparent !important; color: #8d8d99 !important; font-size: 20px !important; font-weight: 500 !important; box-shadow: none !important; }
+        .toolbar-menu-add:hover:not(:disabled) { background: transparent !important; color: #8d8d99 !important; box-shadow: none !important; }
+        .toolbar-menu-add:disabled { opacity: .45; cursor: default; }
+        .toolbar-menu-preset-icons .toolbar-menu-more { flex: 0 0 auto; color: #71717a; font-size: 10px; }
+        .icon-editor-close { border: 0; padding: 2px 8px !important; background: transparent !important; color: #a1a1aa !important; font-size: 24px !important; line-height: 1 !important; }
+        .icon-editor-close:hover { color: #ffffff !important; background: transparent !important; }
+        .icon-editor-layout { display: grid; grid-template-columns: minmax(0, 360px) 38px minmax(220px, 1fr); gap: 12px; align-items: start; }
+        .icon-editor-shape-tools { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .icon-editor-tools { display: flex; flex-direction: column; align-items: center; gap: 5px; margin: 0; }
+        .icon-editor-tools button { width: 34px; height: 34px; min-width: 34px; justify-content: center; padding: 6px !important; border: 0; background: transparent; color: #d4d4d8; }
+        .icon-editor-tools button:hover { background: #35353d; }
+        .icon-editor-tools button.active { background: #35353d; color: #22c55e; }
+        .icon-editor-tools button svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .icon-editor-color-label { display: block; margin: 2px 0 5px; color: var(--text-muted); font-size: 12px; }
+        .icon-editor-palette { display: grid; grid-template-columns: repeat(12, 16px); gap: 3px; margin-bottom: 6px; }
+        .icon-editor-color-swatch { width: 16px; height: 16px; min-width: 16px; padding: 0 !important; border: 1px solid rgba(255,255,255,.28) !important; border-radius: 3px !important; }
+        .icon-editor-color-swatch.selected { outline: 2px solid #fff; outline-offset: 1px; }
+        .icon-editor-custom-color { display: flex; align-items: center; gap: 7px; color: var(--text-muted); font-size: 11px; }
+        .icon-editor-custom-color input { width: 28px; height: 22px; padding: 0; border: 0; background: transparent; cursor: pointer; }
+        .icon-editor-actions { display: flex; gap: 5px; margin-top: 10px; }
+        .icon-editor-actions button { min-width: 0; flex: 1; justify-content: center; padding: 6px 2px; font-size: 9px; white-space: nowrap; }
+        .icon-editor-canvas-wrap { position: relative; width: min(100%, 360px); }
+        .icon-editor-canvas-controls { display: flex; align-items: center; justify-content: flex-end; margin-top: 2px; }
+        .icon-editor-canvas-controls .icon-editor-tools { flex-direction: row; }
+        .icon-editor-text-input { position: absolute; z-index: 2; width: min(160px, 80%); min-width: 44px; box-sizing: border-box; padding: 4px 6px !important; border: 1px solid #9b88b4 !important; border-radius: 3px !important; background: rgba(255,255,255,.94) !important; color: #18181b !important; text-align: center; font-weight: 700; transform: translate(-50%, -50%); }
+        #iconEditorModal .icon-editor-field { gap: 4px; margin-bottom: 7px; }
+        .toolbar-menu-cycle { width: 32px; min-width: 32px; height: 34px; justify-content: center; border: 0 !important; background: transparent !important; box-shadow: none !important; }
+        .toolbar-menu-cycle:not(:disabled):hover { color: #15803d !important; }
+        .toolbar-menu-cycle:disabled { opacity: .35; cursor: default; }
+        #activeToolbarMenuName { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; font-weight: 650; color: #3f4249; padding-inline: 6px; }
+        #deviceSelector .device-btn[hidden], #deviceSelector .menu-divider[hidden] { display: none !important; }
+        #iconEditorCanvas { position: relative; top: auto; left: auto; display: block; width: min(100%, 360px); aspect-ratio: 1; background-color: #f4f4f5; background-image: linear-gradient(45deg, #e4e4e7 25%, transparent 25%), linear-gradient(-45deg, #e4e4e7 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e4e4e7 75%), linear-gradient(-45deg, transparent 75%, #e4e4e7 75%); background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0; border: 1px solid #52525b; border-radius: 6px; cursor: crosshair; touch-action: none; }
+        .icon-editor-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; color: var(--text-muted); font-size: 12px; }
+        .icon-editor-field input[type="range"] { width: 100%; }
+        .icon-editor-selection { display: none; }
+        @media (max-width: 650px) {
+            #iconEditorModal .modal-content { padding: 14px; max-height: 92vh; }
+            .icon-editor-layout { grid-template-columns: minmax(0, 1fr) 38px; }
+            .icon-editor-layout > div:last-child { grid-column: 1 / -1; }
+            #iconEditorCanvas { width: min(100%, 360px); margin: 0 auto; }
+            .toolbar-menu-preset-name { width: 82px; }
+            .icon-editor-shape-tools { grid-column: 2; grid-row: 1; }
+            .icon-editor-layout > div:first-child { grid-column: 1; grid-row: 1; }
+            .icon-editor-layout > div:last-child { grid-row: 2; }
+            .icon-editor-palette { grid-template-columns: repeat(12, minmax(12px, 1fr)); }
+            .icon-editor-color-swatch { width: 100%; }
+        }
+        @media (max-width: 340px) {
+            .main-menu-layout { grid-template-columns: 1fr; gap: 20px; }
+            .main-menu-brand { gap: 5px; }
+        }
+        @media (min-width: 341px) and (max-width: 480px) {
+            #mainMenuModal .main-menu-content { padding: 24px; }
+            .main-menu-actions { gap: 8px; }
+            .main-menu-actions .btn-cad { padding: 10px 8px; font-size: 13px; }
+        }
+        .modal-title { font-size: 20px; font-weight: 600; margin-bottom: 25px; text-align: center; color: #22c55e; display: flex; justify-content: center; align-items: center; gap: 10px;}
+        .modal-text { font-size: 13px; color: var(--text-muted); margin-bottom: 22px; text-align: center;}
+        .modal-buttons { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;}
+        #planTextForm { width: min(300px, calc(100vw - 24px)); padding: 16px; }
+        #planTextForm .modal-title { margin: 0 0 12px; font-size: 17px; }
+        #planTextForm input { min-height: 34px; padding: 6px 8px; box-sizing: border-box; border: 1px solid #52525b; border-radius: 5px; background: #1c1c1f; color: #fff; font-size: 14px; }
+        #devTextInput { width: 100%; }
+        #devTextSize { width: 58px; }
+        .plan-text-size { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; font-size: 13px; }
+        #planTextForm .modal-buttons { margin-top: 12px; justify-content: flex-end; gap: 6px; }
+        #planTextForm .btn-cad { padding: 6px 10px; font-size: 13px; }
+        #btnSaveText { background: #9b88b4; color: #101820; font-weight: 700; }
+
+        .help-container { position: fixed; bottom: 40px; left: 20px; z-index: 200; display: flex; align-items: center; gap: 15px; }
+        .help-btn { 
+            width: 44px; height: 44px; border-radius: 50%; background: var(--help-bg); border: none; color: var(--help-text-color); 
+            display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: bold; cursor: pointer; 
+            transition: all 0.2s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.5); flex-shrink: 0;
+        }
+        .help-btn:hover { background-color: var(--help-bg-hover); color: var(--color-help-highlight); }
+        
+        .help-panel {
+            background: rgba(28, 28, 31, 0.95); border-radius: 22px; padding: 0 25px;
+            display: flex; align-items: center; gap: 20px; height: 44px;
+            opacity: 0; pointer-events: none; transform: translateX(-15px); transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4); white-space: nowrap; overflow-x: auto; max-width: calc(100vw - 120px); border: 1px solid #313135;
+        }
+        .help-panel.open { opacity: 1; pointer-events: auto; transform: translateX(0); }
+        .help-item { font-size: 13px; color: #d1d1d6; display: flex; align-items: center; gap: 6px;}
+        .help-key { background: #121214; padding: 3px 6px; border-radius: 4px; font-family: monospace; color: var(--color-help-highlight); font-weight: bold; font-size: 11px; }
+
+        .footer {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 24px;
+            background: rgba(28, 28, 31, 0.95); border-top: 1px solid #313135;
+            display: flex; justify-content: center; align-items: center; z-index: 100;
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+        }
+        .floor-controls { display: flex; align-items: center; gap: 16px; z-index: 2; height: 100%; }
+        .floor-name { font-size: 13px; font-weight: bold; color: #e1e1e6; font-family: monospace; letter-spacing: 1px; min-width: 40px; text-align: center; cursor: default; padding: 0 5px;}
+        .footer-icon { background: transparent; border: none; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; height: 100%; padding: 0 8px; transition: 0.2s; }
+        .footer-icon:hover { color: #9b88b4; background: rgba(155, 136, 180, 0.1); }
+        .footer-icon svg { width: 14px; height: 14px; stroke-width: 2; stroke: currentColor; fill: none; }
+
+        .setting-col { display: flex; align-items: center; gap: 5px; }
+        .setting-label { font-size: 9px; color: #8d8d99; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;}
+        .toolbar-icon-button {
+            width: 28px; height: 28px; padding: 4px; display: inline-flex; align-items: center; justify-content: center;
+            border: 0; border-radius: 4px; background: transparent; color: #8d8d99; cursor: pointer;
+            transition: color 0.15s, background 0.15s;
+        }
+        .toolbar-icon-button svg { display: block; width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+        .toolbar-icon-button:hover { color: #cbd5e1; }
+        .toolbar-icon-button[aria-pressed="true"] { color: #b6a4cc; }
+        .toolbar-icon-button:focus-visible { outline: 1px solid currentColor; outline-offset: 2px; }
+        .grid-toggle {
+            width: 28px; height: 24px; padding: 3px; margin-top: 1px; border: 0; border-radius: 4px;
+            background: transparent; color: #8d8d99; cursor: pointer; transition: color 0.15s, background 0.15s;
+        }
+        .grid-toggle svg { display: block; width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+        .grid-toggle:hover { color: #cbd5e1; }
+        .grid-toggle[aria-pressed="true"] { color: #b6a4cc; background: transparent; }
+        .grid-toggle:focus-visible { outline: 1px solid currentColor; outline-offset: 2px; }
+
+/* Убираем стрелочки у поля ввода чисел */
+        .clean-number-input::-webkit-outer-spin-button,
+        .clean-number-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .clean-number-input { -moz-appearance: textfield; }
+
+
+    </style>
+    <link rel="stylesheet" href="ui-theme.css?v=20261117-cctv-64">
+<link rel="canonical" href="https://goom.cz/cctv/">
+</head>
+<body>
+    <div id="deviceSupportNotice" role="alert">
+        <section class="device-support-card" aria-labelledby="deviceSupportTitle">
+            <img class="device-support-logo" src="Logo.png" alt="" fetchpriority="high">
+            <h1 id="deviceSupportTitle">Otevřete na počítači nebo tabletu</h1>
+            <p id="deviceSupportMessage">Pro práci s projekty použijte tablet, notebook nebo počítač.</p>
+        </section>
+    </div>
+    <div id="startupLoading" class="plan-loading startup-loading" role="status" aria-label="Načítání aplikace…">
+        <div class="plan-loading-disc" aria-hidden="true"><img src="Logo.png" alt="" fetchpriority="high"></div>
+    </div>
+
+    <input type="file" id="bipsLoader" accept=".cctv,.tech,.bips" style="display:none;">
+    <input type="file" id="imageLoader" accept="image/*, application/pdf, .dxf" style="display:none;">
+
+    <div class="toolbar">
+        <div class="toolbar-row">
+            
+            <div class="app-title">
+                <button class="menu-logo-button" id="btnLogo" type="button" data-tooltip="Меню" aria-label="Nabídka">
+                    <img src="Link.png" class="menu-logo-default" alt="">
+                    <img src="Link2.png" class="menu-logo-hover" alt="">
+                </button>
+                <span class="app-brand-name">GooM CCTV</span>
+            </div>
+
+            <div class="menu-divider" style="height: 20px;"></div>
+            <input type="text" id="projectNameInput" value="Nový projekt" placeholder="Název projektu..." style="background: transparent; border: none; color: #ffffff; font-size: 15px; font-weight: 600; width: 250px; outline: none; border-bottom: 1px dashed rgba(255,255,255,0.3); padding: 2px 5px;" title="Přejmenovat projekt">
+            <button id="btnOpenCloudProjectsToolbar" class="toolbar-icon-button" type="button" data-open-account title="Uživatelský účet" aria-label="Uživatelský účet">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21v-2a8 8 0 0 1 16 0v2"></path></svg>
+            </button>
+            <svg id="projectLocationLocal" class="project-location-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>
+            <svg id="projectLocationCloud" class="project-location-icon" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M6 18a4 4 0 0 1-1-7.9 6 6 0 0 1 11.6-1.4A4.7 4.7 0 0 1 18 18Z"/></svg>
+            <span id="cloudSyncIndicator" role="status" aria-live="polite"></span>
+
+            <div class="toolbar-section" style="margin-left: auto; gap: 12px;">
+                <div class="setting-col">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px;fill:none;stroke:#8d8d99;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;" title="Velikost ikon kamer">
+                        <path d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4M8 8l-4-4M16 8l4-4M8 16l-4 4M16 16l4 4"></path>
+                    </svg>
+                    <input type="range" id="deviceSizeSlider" min="8" max="70" value="16" style="width: 80px; cursor: pointer;" title="Změnit velikost všech značek">
+                </div>
+                <div class="setting-col">
+                    <button id="togglePirCoverage" class="toolbar-icon-button" type="button" aria-pressed="true" title="Skrýt zorná pole" aria-label="Skrýt zorná pole">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12s3.2-6 9-6 9 6 9 6-3.2 6-9 6-9-6-9-6Z"></path><circle cx="12" cy="12" r="2.3"></circle><path d="M12 9.7V4"></path></svg>
+                    </button>
+                </div>
+                <div class="setting-col">
+                    <button id="togglePlanGrid" class="grid-toggle" type="button" aria-pressed="false" title="Zobrazit mřížku nad výkresem" aria-label="Zapnout mřížku">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M4 4h16v16H4zM9.33 4v16M14.67 4v16M4 9.33h16M4 14.67h16"></path>
+                        </svg>
+                    </button>
+                </div>
+                <button id="btnToggleLegend" class="toolbar-icon-button" type="button" aria-pressed="false" title="Zobrazit legendu" aria-label="Zobrazit legendu">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5h12M9 12h12M9 19h12"/><circle cx="4" cy="5" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="19" r="1"/></svg>
+                </button>
+                <button id="btnDetectionSettings" class="toolbar-icon-button" type="button" title="Rozpoznání stěn a zorná pole" aria-label="Rozpoznání stěn a zorná pole">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20V5l6-2v15l6 2 6-2V3"></path><path d="M9 3l6 2M15 5v15M4 10l4-1M16 12l2-1M16 16l2-1"></path></svg>
+                </button>
+                <button id="btnOpenToolbarMenuEditor" class="toolbar-icon-button" type="button" title="Upravit nabídky a ikony" aria-label="Upravit nabídky a ikony">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h10M18 5h2M4 12h2M10 12h10M4 19h10M18 19h2"></path><circle cx="16" cy="5" r="2"></circle><circle cx="8" cy="12" r="2"></circle><circle cx="16" cy="19" r="2"></circle></svg>
+                </button>
+                <button id="btnDetectorSearch" class="toolbar-icon-button" type="button" title="Najít kameru" aria-label="Najít kameru" aria-haspopup="dialog" hidden>
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="arrow-tab" id="arrowTabBtn" title="Zobrazit / Skrýt panel nástrojů">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
+
+        <div class="sliding-row-container">
+            <div class="toolbar-row" style="padding: 10px 20px; justify-content: center;">
+                <div class="device-selector-group" id="deviceSelector">
+                    <button id="btnCycleToolbarMenu" class="btn-cad toolbar-menu-cycle" type="button" data-menu-id="default" aria-label="Přepnout sadu nabídek">
+                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                    </button>
+                    <select id="loopSelect" style="margin: 0 4px; width: 128px;" title="Vyberte skupinu kamer"></select>
+                    <div class="device-set-window"><div class="device-set-tools" id="deviceSetTools">
+
+                    <div id="cameraPresetTools" hidden></div>
+                    <button id="btnCameraPicker" class="device-btn" type="button" title="Vybrat typ kamery" aria-haspopup="dialog" aria-controls="cameraSettingsModal">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="14" height="14" rx="3"/><path d="m16 10 6-4v12l-6-4"/><circle cx="9" cy="12" r="3"/></svg>
+                        <span>Kamera</span>
+                    </button>
+                    <div class="menu-divider"></div>
+                    <div id="textTools" class="text-tools" role="group" aria-label="Text a poznámky">
+                        <button class="device-btn" type="button" data-type="plainText" title="Přidat text na výkres" aria-label="Přidat text na výkres">Abc</button>
+                        <button class="device-btn" type="button" data-type="textNode" title="Přidat textovou poznámku" aria-label="Přidat textovou poznámku">Abc*</button>
+                    </div>
+                    </div></div>
+                    <button id="btnToggleConnections" class="btn-cad" style="padding: 6px 10px;" title="Skrýt / Zobrazit čáry kabelů">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    </button>
+                    <span id="activeToolbarMenuName" data-user-content>Default</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="help-container">
+        <button id="helpBtn" class="help-btn" title="Klávesové zkratky (Nápověda)">?</button>
+        <div id="helpPanel" class="help-panel">
+            <span class="help-item"><span class="help-key">S / D</span> Podržet: otočit doprava / doleva</span>
+            <span class="help-item"><span class="help-key">Ctrl+Z</span> Zpět</span>
+            <span class="help-item"><span class="help-key">Del</span> Smazat</span>
+            <span class="help-item"><span class="help-key">Ctrl+C/V</span> Kopírovat/Vložit</span>
+        </div>
+    </div>
+
+    <div class="canvas-container" id="canvasContainer">
+        <div id="emptyProjectShortcut" hidden><button id="emptyProjectKey" type="button" aria-label="Vytvořit nový projekt">F</button><span>—</span><span>Vytvořit nový projekt</span></div>
+        <canvas id="blueprintCanvas"></canvas>
+        <div id="tabletRotationHandles" class="tablet-rotation-handles" hidden><button type="button" data-rotate-direction="-1" aria-label="Otočit doleva"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M24 24A11 11 0 1 0 7 10M7 3v7h7"/></svg></button><button type="button" data-rotate-direction="1" aria-label="Otočit doprava"><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M8 24A11 11 0 1 1 25 10M25 3v7h-7"/></svg></button></div>
+        <div id="planLoading" class="plan-loading" role="status" aria-label="Načítání projektu..." hidden>
+            <div class="plan-loading-disc" aria-hidden="true"><img src="Logo.png" alt=""></div>
+        </div>
+    </div>
+
+    <div class="footer" id="appFooter">
+        <div class="floor-controls"><span id="footerCurrentFloor" class="floor-name" aria-live="polite"></span>
+            <button id="btnOverview" class="footer-icon" title="Přehled celé budovy">
+                <svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 12 12 17 22 12"></polyline><polyline points="2 17 12 22 22 17"></polyline></svg>
+                <span style="font-family: sans-serif; font-size: 11px; margin-left: 6px; font-weight: bold; letter-spacing: 0.5px;">ŘEZ BUDOVOU</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="welcomeModal" class="modal is-art-loading" style="display: flex;" data-step="auth">
+        <div class="modal-content welcome-card" role="dialog" aria-modal="true" aria-label="Vítejte v GOOM">
+            <div class="welcome-controls">
+                <button id="btnWelcomeAccount" class="welcome-back" type="button" aria-label="Zpět" title="Zpět" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"></path></svg></button>
+                <select class="language-picker" data-language-select aria-label="Jazyk"><option value="cs" data-language-name="Čeština">Cz</option><option value="en" data-language-name="English">En</option><option value="de" data-language-name="Deutsch">De</option><option value="ru" data-language-name="Русский">Ru</option></select>
+            </div>
+            <div class="welcome-panel">
+                <div class="welcome-identity">
+                    <div class="welcome-brand">CCTV</div>
+                    <p class="welcome-system-name">Kamerový systém</p>
+                </div>
+                <div class="welcome-step-content">
+                <div id="welcomeAuthBlock" class="welcome-actions">
+                    <h1 class="welcome-heading">Vítejte!</h1>
+                    <p class="welcome-description">Přihlaste se a pokračujte ke svým projektům.</p>
+                    <button id="btnGoogleSignIn" class="btn-cad welcome-auth-button" type="button" aria-label="Přihlásit se nebo registrovat přes Google">
+                        Pokračovat s Google
+                    </button>
+                    <div id="welcomeEmailActions" class="welcome-actions">
+                        <button id="btnEmailSignIn" class="btn-cad welcome-auth-button" type="button">Přihlásit se e-mailem</button>
+                        <button id="btnEmailRegister" class="auth-link" type="button">Vytvořit účet</button>
+                    </div>
+                    <p id="googleAuthMessage" role="status" aria-live="polite" hidden></p>
+                    <div id="googleAuthStatus" class="welcome-auth-status" aria-live="polite">
+                        <div class="pro-name"><span id="googleAuthUser"></span><span id="welcomeProBadge" class="pro-badge" hidden>PROJECT</span></div>
+                        <button id="btnGoogleSignOut" class="btn-cad welcome-signout" type="button">Odhlásit se</button>
+                    </div>
+                    <button id="btnWelcomeContinue" class="btn-cad" type="button" hidden style="background: #9b88b4; color: #fff;">Přejít k projektům</button>
+                    <button id="btnWelcomeProfile" class="auth-link" type="button" hidden>Uživatelský účet</button>
+                </div>
+
+                <div id="welcomeEmailBlock" class="welcome-actions" hidden>
+                    <h2 id="emailAuthTitle" class="welcome-heading">Přihlášení</h2>
+                    <p id="emailRegistrationHelp" class="welcome-description" hidden>Použijte libovolnou e-mailovou adresu. Heslo musí mít alespoň 8 znaků.</p>
+                    <form id="emailAuthForm" class="email-auth-form">
+                        <label id="emailNameField" hidden>Jméno<input id="emailDisplayName" class="account-input" type="text" name="displayName" autocomplete="name" maxlength="120"></label>
+                        <label>E-mail<input id="emailAuthEmail" class="account-input" type="email" name="email" autocomplete="email" required maxlength="254"></label>
+                        <label id="emailPasswordField">Heslo<input id="emailAuthPassword" class="account-input" type="password" name="password" autocomplete="current-password" required minlength="8"></label>
+                        <label id="emailConfirmField" hidden>Potvrdit heslo<input id="emailAuthConfirm" class="account-input" type="password" name="passwordConfirm" autocomplete="new-password"></label>
+                        <label id="emailTypeField" hidden>Typ účtu<select id="emailAccountType" class="account-input" name="accountType"><option value="personal">Osobní účet</option><option value="company">Firma</option></select></label>
+                        <label id="emailIcoField" hidden>IČO<input id="emailCompanyIco" class="account-input" name="ico" inputmode="numeric" maxlength="8" placeholder="8 číslic včetně kontrolní číslice"></label>
+                        <p id="emailCompanyHelp" class="welcome-description" hidden>Firemní údaje můžete upravit později. PROJECT je dostupné v uživatelském účtu.</p>
+                        <p id="emailAuthFeedback" class="account-note" role="status" aria-live="polite" hidden></p>
+                        <button id="btnEmailAuthSubmit" class="btn-cad auth-primary" type="submit">Přihlásit se</button>
+                        <button id="btnEmailResetPassword" class="auth-link" type="button">Zapomenuté heslo?</button>
+                    </form>
+                </div>
+
+                <div id="welcomeButtonsBlock" class="welcome-actions" hidden>
+                    <h2 class="welcome-heading">Vyberte projekt</h2>
+                    <button id="btnWelcomeResume" class="btn-cad welcome-auth-button" type="button" hidden>Pokračovat v posledním projektu</button>
+                    <button id="btnWelcomeNew" class="btn-cad" style="background: #ef4444; color: #ffffff; font-weight: bold; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3); border: none;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px; height:18px; margin-right:10px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                        Nový projekt
+                    </button>
+                    <button id="btnWelcomeOpenBIPS" class="btn-cad" style="background: #cbd5e1; color: #0f0f11; font-weight: bold; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); border: none;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#0f0f11" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:18px; height:18px; margin-right:10px;"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                        Otevřít projekt (.cctv)
+                    </button>
+                </div>
+
+                <div id="welcomeNamingBlock" class="welcome-naming" hidden>
+                    <div style="font-size: 13px; color: #a1a1aa; margin-bottom: -6px;">Zadejte název projektu:</div>
+                    <input type="text" id="welcomeProjectNameInput" class="welcome-project-name" value="Nový projekt" placeholder="Např. Rodinný dům Praha…" style="background: #1c1c1f; border: 1px solid #313135; color: #ffffff; font-size: 14px; font-weight: 600; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#9b88b4'" onblur="this.style.borderColor='#313135'">
+                    <div class="welcome-name-buttons">
+                        <button id="btnWelcomeCancelNaming" class="btn-cad" style="background: #252529; color: #a1a1aa; font-weight: bold; border: none;">Zrušit</button>
+                        <button id="btnWelcomeConfirmNaming" class="btn-cad" style="background: #ef4444; color: #ffffff; font-weight: bold; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2); border: none;">Vytvořit</button>
+                    </div>
+                </div>
+
+                </div>
+                <div class="welcome-copyright"><strong>GooM</strong><span>Special Edition</span><small>2026</small></div>
+            </div>
+            
+            <div class="welcome-art-space">
+                <img src="Hi.png?v=20261114-loading-27" fetchpriority="high" decoding="async" alt="" aria-hidden="true">
+                <video id="welcomeIntroVideo" muted playsinline preload="none" aria-hidden="true" hidden></video>
+                <div class="welcome-intro">
+                    <button id="btnIntroPlay" class="welcome-intro-play" type="button" title="Přehrát úvodní video" aria-label="Přehrát úvodní video"></button>
+                    <p id="welcomeIntroStatus" class="welcome-intro-status" role="status" hidden></p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="userAccountModal" class="modal">
+        <section class="modal-content account-card" role="dialog" aria-modal="true" aria-labelledby="userAccountTitle">
+            <div class="account-header">
+                <button id="btnAccountClose" class="btn-cad icon-editor-close" type="button" aria-label="Zavřít">×</button>
+                <h2 id="userAccountTitle">Uživatelský účet</h2>
+                <div class="account-language-controls"><select class="language-picker" data-language-select aria-label="Jazyk"><option value="cs" data-language-name="Čeština">Cz</option><option value="en" data-language-name="English">En</option><option value="de" data-language-name="Deutsch">De</option><option value="ru" data-language-name="Русский">Ru</option></select></div>
+            </div>
+            <div class="account-columns"><div class="account-personal"><dl class="account-details">
+                <dt>Jméno</dt><dd class="pro-name"><span id="accountName" data-user-content></span><span id="accountProBadge" class="pro-badge" hidden>PROJECT</span></dd>
+                <dt>E-mail</dt><dd id="accountEmail" data-user-content></dd>
+                <dt>Typ účtu</dt><dd id="accountTypeLabel"></dd>
+                <dt id="accountIcoLabel" hidden>IČO</dt><dd id="accountIcoValue" data-user-content hidden></dd>
+            </dl>
+            <form id="accountProfileForm" class="account-form">
+                <label>Jméno<input id="accountDisplayName" class="account-input" name="displayName" autocomplete="name" maxlength="120" required></label>
+                <button id="btnAccountSave" class="btn-cad auth-primary" type="submit">Uložit údaje</button>
+            </form>
+            <p id="accountEmailStatus" class="account-note"></p>
+            <div class="account-actions"><button id="btnAccountVerifyEmail" class="btn-cad" type="button">Ověřit e-mail</button><button id="btnAccountRefresh" class="btn-cad" type="button">E-mail jsem ověřil(a)</button></div>
+            </div><div class="account-subscription"><section class="account-cloud" aria-labelledby="accountCloudTitle">
+                <h3 id="accountCloudTitle">Cloudové úložiště</h3>
+                <p id="accountCloudInfo" class="account-note"></p>
+                <button id="btnAccountCloudProjects" class="btn-cad cloud-upgrade" type="button" aria-describedby="accountCloudInfo">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18a4 4 0 0 1-1-7.9 6 6 0 0 1 11.6-1.4A4.7 4.7 0 0 1 18 18Z"/></svg>
+                    <span>Cloudové projekty</span>
+                </button>
+            </section>
+            <div class="pro-card">
+                <h3>Předplatné PROJECT</h3>
+                <p id="accountProStatus" class="pro-status"></p>
+                <button id="btnUpdatePro" class="btn-cad auth-primary" type="button">Ceník PROJECT</button>
+            </div>
+            <p id="accountSubscriptionPeriod" class="account-note"></p><button id="btnManageSubscription" class="btn-cad" type="button" hidden>Spravovat předplatné</button>
+            <form id="companySeatForm" class="company-seat-form account-form" hidden>
+                <h3>Firemní přístupy PROJECT</h3>
+                <p class="account-note">Až tři kolegové získají PROJECT po přihlášení s ověřeným e-mailem. Přístup končí s vaším předplatným.</p>
+                <input class="account-input" type="email" maxlength="254" aria-label="E-mail kolegy 1" placeholder="E-mail kolegy 1">
+                <input class="account-input" type="email" maxlength="254" aria-label="E-mail kolegy 2" placeholder="E-mail kolegy 2">
+                <input class="account-input" type="email" maxlength="254" aria-label="E-mail kolegy 3" placeholder="E-mail kolegy 3">
+                <button id="btnSaveCompanySeats" class="btn-cad" type="submit">Uložit přístupy</button>
+                <p id="companySeatStatus" class="account-note" role="status" hidden></p>
+            </form>
+            </div></div><p id="accountFeedback" role="status" aria-live="polite" hidden></p>
+            <div class="account-actions">
+                <a id="btnAccountAdmin" class="btn-cad" href="https://goom.cz/pzts/admin.html" target="_blank" rel="noopener" hidden>Admin</a>
+                <button id="btnAccountSignOut" class="btn-cad" type="button">Odhlásit se</button>
+            </div>
+        </section>
+    </div>
+
+    <div id="proUpgradeModal" class="modal" style="z-index: 460;">
+        <section class="modal-content account-card pro-pricing" role="dialog" aria-modal="true" aria-labelledby="proUpgradeTitle">
+            <div class="account-header">
+                <button id="btnProClose" class="pro-close" type="button" aria-label="Zavřít">×</button>
+                <h2 id="proUpgradeTitle">Tarify a předplatné</h2>
+            </div>
+            <div class="pro-period" role="group" aria-label="Zvolte období">
+                <label><input type="radio" name="proPeriod" value="monthly" checked><span>Měsíčně</span></label>
+                <label><input type="radio" name="proPeriod" value="annual"><span>Ročně <b>−12 %</b></span></label>
+            </div>
+            <div class="pro-plans">
+                <article class="pro-plan pro-plan-basic" aria-labelledby="proBasicTitle">
+                    <header class="pro-plan-header"><h3 id="proBasicTitle">Základní</h3></header>
+                    <div class="pro-plan-body">
+                        <div class="pro-price-free"><strong>Zdarma</strong></div>
+                        <p class="pro-plan-summary">Pro práci s výkresy a ukládání do zařízení.</p>
+                        <div class="pro-plan-actions"><button class="btn-cad pro-plan-action" type="button" disabled>Aktivní</button></div>
+                        <ul class="pro-plan-features" role="list">
+                            <li>Import a úpravy výkresů</li>
+                            <li>Místní uložení projektů .cctv</li>
+                            <li>Export a tisk s vodoznakem</li>
+                            <li>Světlý a tmavý výkres</li>
+                            <li>Průvodce prvním projektem</li>
+                        </ul>
+                    </div>
+                </article>
+                <article class="pro-plan pro-plan-standard" aria-labelledby="proStandardTitle">
+                    <header class="pro-plan-header">
+                        <h3 id="proStandardTitle">PROJECT</h3><p class="pro-plan-caption">Doporučujeme</p>
+                    </header>
+                    <div class="pro-plan-body">
+                        <div class="pro-price-option" data-period="monthly">
+                            <span class="pro-price"><span data-pro-price="monthly" data-currency="EUR"></span><span class="pro-price-separator" aria-hidden="true">/</span><strong data-pro-price="monthly" data-currency="CZK"></strong></span><small>Měsíčně</small>
+                        </div>
+                        <div class="pro-price-option" data-period="annual">
+                            <span class="pro-price"><span data-pro-price="annual" data-currency="EUR"></span><span class="pro-price-separator" aria-hidden="true">/</span><strong data-pro-price="annual" data-currency="CZK"></strong></span><small>Ročně</small>
+                        </div>
+                        <p class="pro-plan-summary">Pro práci napříč zařízeními a s vlastními symboly.</p>
+                        <div class="pro-plan-actions">
+                            <button id="btnProPurchase" class="btn-cad pro-plan-action" type="button" data-buy-tier="pro">Koupit PROJECT</button>
+                            <button class="btn-cad pro-plan-action" type="button" data-manage-tier="pro" hidden>Spravovat předplatné</button>
+                        </div>
+                        <ul class="pro-plan-features" role="list">
+                            <li>Vše ze základní verze</li>
+                            <li>Sada nástrojů PROJECT</li><li>Fotografie plánu z tabletu</li>
+                            <li>Editor nabídek a ikon</li>
+                            <li>Až 5 projektů v cloudu</li>
+                            <li>Vyhledávání kamer ve všech podlažích</li>
+                            <li>Výstupy bez vodoznaku</li>
+                        </ul>
+                    </div>
+                </article>
+                <article class="pro-plan pro-plan-company" aria-labelledby="proCompanyTitle">
+                    <header class="pro-plan-header">
+                        <h3 id="proCompanyTitle">Firemní PROJECT</h3><p class="pro-plan-caption">Pro týmy</p>
+                    </header>
+                    <div class="pro-plan-body">
+                        <div class="pro-price-option" data-period="monthly">
+                            <span class="pro-price"><span data-pro-price="companyMonthly" data-currency="EUR"></span><span class="pro-price-separator" aria-hidden="true">/</span><strong data-pro-price="companyMonthly" data-currency="CZK"></strong></span><small>Měsíčně</small>
+                        </div>
+                        <div class="pro-price-option" data-period="annual">
+                            <span class="pro-price"><span data-pro-price="companyAnnual" data-currency="EUR"></span><span class="pro-price-separator" aria-hidden="true">/</span><strong data-pro-price="companyAnnual" data-currency="CZK"></strong></span><small>Ročně</small>
+                        </div>
+                        <p class="pro-plan-summary">Jedno předplatné pro vás a vaše kolegy.</p>
+                        <div class="pro-plan-actions">
+                            <button id="btnCompanyProPurchase" class="btn-cad pro-plan-action" type="button" data-buy-tier="company">Koupit firemní PROJECT</button>
+                            <button class="btn-cad pro-plan-action" type="button" data-manage-tier="company" hidden>Spravovat předplatné</button>
+                        </div>
+                        <ul class="pro-plan-features" role="list">
+                            <li>Vše z PROJECT</li>
+                            <li>Až 3 další účty PROJECT</li>
+                            <li>Přístup kolegů po dobu firemního předplatného</li>
+                        </ul>
+                    </div>
+                </article>
+            </div>
+            <div class="pro-pricing-footer">
+                <p id="proPurchaseStatus" class="pro-status" role="status" aria-live="polite"></p>
+                <p class="account-note">Platba v EUR. Ceny v Kč jsou orientační podle kurzu ČNB.</p>
+                <p class="account-note">Předplatné se obnovuje po zvoleném období. Automatické obnovení můžete zrušit v účtu.</p>
+            </div>
+        </section>
+    </div>
+
+    <div id="cloudProjectsModal" class="modal">
+        <div class="modal-content cloud-projects-content" role="dialog" aria-modal="true" aria-labelledby="cloudProjectsTitle">
+            <div class="cloud-projects-header">
+                <button id="btnCloudProjectsClose" class="btn-cad icon-editor-close" type="button" aria-label="Zavřít cloudové projekty">×</button>
+                <svg class="project-location-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 18a4 4 0 0 1-1-7.9 6 6 0 0 1 11.6-1.4A4.7 4.7 0 0 1 18 18Z"/></svg>
+                <h2 class="modal-title" id="cloudProjectsTitle">Cloudové projekty</h2>
+                <span id="cloudProjectCount"></span>
+            </div>
+            <p id="cloudProjectsStatus" role="status" aria-live="polite"></p>
+            <div class="cloud-projects-toolbar">
+                <button id="btnCloudSaveCurrent" class="btn-cad" type="button" data-save-cloud-project style="background:#22c55e;color:#121214;font-weight:bold;" hidden>Uložit kopii do cloudu</button>
+            </div>
+            <div id="cloudProjectsList"></div>
+        </div>
+    </div>
+
+    <div id="appDialog" class="app-dialog-backdrop" hidden>
+        <section class="app-dialog-card" aria-labelledby="appDialogTitle" aria-describedby="appDialogMessage">
+            <h2 class="app-dialog-title" id="appDialogTitle"></h2>
+            <p class="app-dialog-message" id="appDialogMessage"></p>
+            <input id="appDialogInput" class="app-dialog-input" type="text" hidden>
+            <div class="app-dialog-actions">
+                <button id="appDialogCancel" class="btn-cad app-dialog-cancel" type="button">Zrušit</button>
+                <button id="appDialogAlternate" class="btn-cad app-dialog-cancel" type="button" hidden></button>
+                <button id="appDialogConfirm" class="btn-cad app-dialog-confirm" type="button">Potvrdit</button>
+            </div>
+        </section>
+    </div>
+
+    <aside id="onboardingBackdrop" class="onboarding-card" aria-label="Průvodce prvním projektem" hidden>
+            <div aria-live="polite">
+            <p class="onboarding-step" id="onboardingStep"></p>
+            <h2 class="onboarding-title" id="onboardingTitle"></h2>
+            <p class="onboarding-message" id="onboardingMessage"></p>
+            </div>
+            <div class="onboarding-actions">
+                <button id="onboardingSkip" class="btn-cad" type="button">Přeskočit</button>
+                <button id="onboardingNext" class="btn-cad onboarding-next" type="button">Dále</button>
+            </div>
+    </aside>
+
+    <div id="mainMenuModal" class="modal">
+        <div class="modal-content main-menu-content">
+            <div class="main-menu-layout">
+                <div class="main-menu-brand">
+                    <button type="button" id="btnOpenFeedback" class="main-menu-feedback" aria-haspopup="dialog">
+                        <img class="main-menu-brand-logo" src="Logo2.png?v=20261115-35" alt="">
+                        <span>Zpětná vazba</span>
+                    </button>
+                </div>
+                <div class="main-menu-actions">
+                <button id="btnMenuNew" class="btn-cad" style="width: 100%; justify-content: flex-start; background: #ef4444; color: #ffffff; font-weight: bold;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                    Nový projekt
+                </button>
+                <button id="btnMenuOpenBIPS" class="btn-cad" style="width: 100%; justify-content: flex-start; background: #cbd5e1; color: #0f0f11; font-weight: bold;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#0f0f11" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                    Otevřít projekt (.cctv)
+                </button>
+                <div class="plan-source-actions">
+                <button id="btnMenuLoadImg" class="btn-cad" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8" cy="8" r="1"/><path d="m21 16-6-6L3 21"/></svg><span>PDF / IMG</span></button>
+                <button id="btnMenuSatellite" class="btn-cad" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3Zm6-3v15m6-12v15"/></svg><span>Mapa</span></button>
+                <button id="btnMenuPhoto" class="btn-cad" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m8 5 2-2h4l2 2h4a2 2 0 0 1 2 2v12H2V7a2 2 0 0 1 2-2Z"/><circle cx="12" cy="12" r="4"/></svg><span>Foto</span></button>
+                </div>
+                <button id="btnMenuSave" class="btn-cad" style="width: 100%; justify-content: flex-start;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    Uložit / Export
+                </button>
+                <button id="btnMenuPrint" class="btn-cad" style="width: 100%; justify-content: flex-start;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                    Tisk
+                </button>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <div id="printPage" aria-hidden="true"></div>
+
+    <div id="detectorSearchModal" class="modal">
+        <div class="modal-content detector-search-card" role="dialog" aria-modal="true" aria-labelledby="detectorSearchTitle">
+            <div class="detector-search-header">
+                <button id="btnCloseDetectorSearch" class="icon-editor-close" type="button" aria-label="Zavřít">×</button>
+                <h2 id="detectorSearchTitle">Najít kameru</h2>
+            </div>
+            <form id="detectorSearchForm" class="detector-search-form">
+                <label for="detectorSearchBus">Skupina
+                    <input id="detectorSearchBus" type="number" min="1" step="1" inputmode="numeric" required>
+                </label>
+                <label for="detectorSearchNumber">Číslo kamery
+                    <input id="detectorSearchNumber" type="number" min="1" step="1" inputmode="numeric" required>
+                </label>
+                <button class="btn-cad" type="submit">Najít</button>
+            </form>
+            <p id="detectorSearchStatus" role="status" hidden></p>
+            <ul id="detectorSearchResults" class="detector-search-results" hidden></ul>
+        </div>
+    </div>
+    <div id="detectionSettingsModal" class="modal">
+        <div class="modal-content" style="max-width: 430px;">
+            <div class="modal-title">Rozpoznání stěn a zorná pole</div>
+            <label class="setting-label" for="planThemeInput">Zobrazení výkresu</label>
+            <select id="planThemeInput" style="width:100%;margin:8px 0 16px"><option value="dark">Bílé čáry na tmavém pozadí</option><option value="original">Původní výkres</option><option value="light">Černé čáry na bílém pozadí</option></select>
+            <div class="wall-sensitivity-heading"><label class="setting-label" for="wallThresholdInput">Citlivost rozpoznání stěn</label><output id="wallSensitivityValue" for="wallThresholdInput">39 %</output></div>
+            <input id="wallThresholdInput" class="wall-sensitivity-slider" type="range" min="0" max="1000" step="1" value="392">
+            <div class="wall-sensitivity-ends"><span>Bez překážek</span><span>I jemné čáry</span></div>
+            <label class="plan-output-coverage"><input id="wallPreviewInput" type="checkbox"> Zvýraznit rozpoznané překážky</label>
+            <p class="wall-sensitivity-help">Citlivost se projeví ihned. Vyšší hodnota zachytí i světlé čáry; text a nábytek mohou být také překážkou.</p>
+            <div class="modal-buttons">
+                <button id="btnCloseDetectionSettings" class="btn-cad" type="button">Zavřít</button>
+                <button id="btnSaveDetectionSettings" class="btn-cad" type="button" style="background: #22c55e; color: #121214; font-weight: bold;">Použít</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="iconEditorModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-title">
+                <button id="btnIconEditorClose" class="btn-cad icon-editor-close" type="button" title="Zavřít editor" aria-label="Zavřít editor">×</button>
+                <span>Editor nabídek a ikon</span>
+            </div>
+            <div class="toolbar-menu-list-shell">
+                <div class="toolbar-menu-presets" id="toolbarMenuPresets" aria-label="Nabídky a zařízení k úpravě">
+                </div>
+            </div>
+            <select id="iconEditorTarget" aria-label="Typ zařízení pro ikonu" style="display:none;"></select>
+            <div class="toolbar-menu-editor-actions">
+                <button id="btnToolbarMenuNew" class="btn-cad toolbar-menu-add" type="button" title="Přidat nabídku" aria-label="Přidat nabídku">+</button>
+                <label class="toolbar-menu-share" hidden><input type="checkbox" id="toolbarMenuShare">Dostupné všem uživatelům PROJECT</label>
+                <span id="toolbarMenuEditorStatus" style="color:var(--text-muted);font-size:12px;"></span>
+                <div class="toolbar-menu-editor-actions-group">
+                    <button id="btnToolbarImportMenus" class="btn-cad" type="button" hidden>Importovat osobní nabídky</button>
+                    <button id="btnToolbarLegacyPreset" class="btn-cad" type="button" hidden>Použít starší nabídku z tohoto zařízení</button>
+                    <button id="btnToolbarMenuPublish" class="btn-cad" type="button" hidden>Publikovat pro PROJECT</button>
+                    <button id="btnToolbarMenuSave" class="btn-cad" type="button" style="background:#22c55e;color:#121214;font-weight:bold;">Uložit nabídku</button>
+                </div>
+            </div>
+            <strong id="iconEditorCurrentType" style="display:block;color:#d4d4d8;font-size:12px;margin:0 0 6px;">Ikona zařízení</strong>
+            <div class="icon-editor-layout">
+                <div>
+                    <div class="icon-editor-canvas-wrap">
+                        <canvas id="iconEditorCanvas" width="400" height="400" aria-label="Plátno editoru ikon"></canvas>
+                        <div class="icon-editor-turn" id="iconEditorTurn" hidden>
+                            <button type="button" data-icon-turn="-15" title="Otočit doleva" aria-label="Otočit doleva">↶</button>
+                            <button type="button" data-icon-turn="15" title="Otočit doprava" aria-label="Otočit doprava">↷</button>
+                        </div>
+                    </div>
+                    <div class="icon-editor-canvas-controls">
+                        <div class="icon-editor-tools" aria-label="Akce plátna">
+                            <button class="btn-cad" type="button" id="btnIconEditorUndo" title="Vrátit akci" aria-label="Vrátit akci"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"></path><path d="M4 9h10a6 6 0 0 1 0 12h-2"></path></svg></button>
+                        </div>
+                    </div>
+                    <div class="icon-editor-selection" id="iconEditorSelection" aria-live="polite"></div>
+                </div>
+                <div class="icon-editor-shape-tools">
+                    <button class="btn-cad icon-shape-scroll" type="button" data-shape-scroll="-1" aria-label="Posunout tvary nahoru" aria-controls="iconEditorShapeList" disabled><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button>
+                    <div class="icon-editor-tools icon-editor-shape-list" id="iconEditorShapeList" role="group" aria-label="Přidat tvar">
+                        <button class="btn-cad" type="button" data-icon-shape="circle" title="Kruh" aria-label="Kruh"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"></circle></svg></button>
+                        <button class="btn-cad" type="button" data-icon-shape="rect" title="Čtverec" aria-label="Čtverec"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16"></rect></svg></button>
+                        <button class="btn-cad" type="button" data-icon-shape="rectangle" title="Obdélník" aria-label="Obdélník"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12"/></svg></button>
+                        <button class="btn-cad" type="button" data-icon-shape="roundRect" title="Zaoblený čtverec" aria-label="Zaoblený čtverec"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4"></rect></svg></button>
+                        <button class="btn-cad" type="button" data-icon-shape="roundedRectangle" title="Zaoblený obdélník" aria-label="Zaoblený obdélník"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="3"/></svg></button>
+                        <button class="btn-cad" type="button" data-icon-shape="ellipse" title="Ovál" aria-label="Ovál"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="9" ry="5"/></svg></button>
+                        <button class="btn-cad" type="button" data-icon-shape="capsule" title="Kapsle" aria-label="Kapsle"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="10" rx="5"/></svg></button>
+                        <button class="btn-cad" type="button" data-icon-shape="triangle" title="Trojúhelník" aria-label="Trojúhelník"><svg viewBox="0 0 24 24"><path d="M12 4 21 20H3Z"></path></svg></button>
+                        <button class="btn-cad" type="button" data-icon-shape="diamond" title="Kosočtverec" aria-label="Kosočtverec"><svg viewBox="0 0 24 24"><path d="m12 3 9 9-9 9-9-9z"></path></svg></button>
+                        <button class="btn-cad" type="button" data-icon-shape="line" title="Čára" aria-label="Čára"><svg viewBox="0 0 24 24"><path d="M4 20 20 4"></path></svg></button>
+                        <button class="btn-cad" type="button" data-icon-shape="text" title="Text" aria-label="Text"><svg viewBox="0 0 24 24"><path d="M5 5h14M12 5v14M8 19h8"></path></svg></button>
+                        <button class="btn-cad" type="button" data-icon-shape="hexagon" title="Šestiúhelník" aria-label="Šestiúhelník"><svg viewBox="0 0 24 24"><path d="M7 4h10l5 8-5 8H7l-5-8Z"/></svg></button>
+                        <button class="btn-cad" type="button" data-icon-shape="octagon" title="Osmiúhelník" aria-label="Osmiúhelník"><svg viewBox="0 0 24 24"><path d="M8 3h8l5 5v8l-5 5H8l-5-5V8Z"/></svg></button>
+                        <button class="btn-cad" type="button" data-icon-shape="arc" title="Oblouk" aria-label="Oblouk"><svg viewBox="0 0 24 24"><path d="M4 16a8 8 0 0 1 16 0"/></svg></button>
+                        <button class="btn-cad" type="button" data-icon-shape="arrow" title="Šipka" aria-label="Šipka"><svg viewBox="0 0 24 24"><path d="M3 12h17m-6-6 6 6-6 6"/></svg></button>
+                    </div>
+                    <button class="btn-cad icon-shape-scroll" type="button" data-shape-scroll="1" aria-label="Posunout tvary dolů" aria-controls="iconEditorShapeList"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+                </div>
+                <div>
+                    <span class="icon-editor-color-label">Barva</span>
+                    <div id="iconEditorColorPalette" class="icon-editor-palette" aria-label="Paleta barev"></div>
+                    <label class="icon-editor-custom-color">Vlastní barva
+                        <input id="iconEditorColor" type="color" value="#22c55e" aria-label="Vybrat vlastní barvu">
+                    </label>
+                    <label class="icon-editor-custom-color">Barva výplně
+                        <input id="iconEditorFillColor" type="color" value="#ffffff" aria-label="Barva výplně">
+                    </label>
+                    <label class="icon-editor-field" style="flex-direction:row;align-items:center;">
+                        <input id="iconEditorFill" type="checkbox" checked>
+                        Výplň tvaru
+                    </label>
+                    <label class="icon-editor-field">Velikost
+                        <input id="iconEditorSize" type="range" min="10" max="400" value="90">
+                    </label>
+                    <label class="icon-editor-field">Tloušťka čáry
+                        <input id="iconEditorStroke" type="range" min="1" max="24" value="6">
+                    </label>
+                    <label class="icon-editor-field" id="iconEditorWeightField" hidden>Tloušťka textu
+                        <input id="iconEditorWeight" type="range" min="100" max="900" step="100" value="700">
+                    </label>
+                    <section class="icon-template" aria-labelledby="iconTemplateTitle">
+                        <button id="btnIconEditorTemplate" class="icon-template-preview" type="button" aria-label="Použít šablonu" title="Použít šablonu" disabled>
+                            <img id="iconTemplateImage" alt="" hidden><span id="iconTemplateEmpty" aria-hidden="true">—</span>
+                        </button>
+                        <div>
+                            <h3 id="iconTemplateTitle">Šablona</h3>
+                            <button id="btnSaveIconTemplate" class="btn-cad" type="button">Uložit šablonu</button>
+                        </div>
+                    </section>
+                    <div class="icon-editor-actions">
+                        <button id="btnIconEditorDuplicate" class="btn-cad" type="button">Duplikovat tvar</button>
+                        <button id="btnIconEditorDelete" class="btn-cad" type="button" title="Odstranit tvar">Odstranit</button>
+                        <button id="btnIconEditorClear" class="btn-cad" type="button">Vymazat</button>
+                        <button id="btnIconEditorReset" class="btn-cad" type="button" title="Obnovit výchozí ikonu">Obnovit výchozí</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="saveModal" class="modal">
+        <div class="modal-content plan-output-content">
+            <div class="plan-output-heading"><div class="modal-title">Exportovat projekt</div><button id="btnOutputClose" class="btn-cad" type="button">Zavřít</button></div>
+            <div class="plan-output-layout">
+                <div class="plan-output-options">
+                    <div class="modal-text">Celé podlaží, nezávisle na přiblížení obrazovky.</div>
+                    <div class="plan-output-actions">
+                        <button id="btnExportBIPS" class="btn-cad output-project" type="button"><svg class="project-location-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/></svg>Uložit Projekt (.cctv)</button>
+                        <button id="btnExportPNG" class="btn-cad" type="button">PNG</button>
+                        <button id="btnExportJPEG" class="btn-cad" type="button">JPG</button>
+                        <button id="btnExportSVG" class="btn-cad" type="button">SVG</button>
+                        <button id="btnExportPDF" class="btn-cad" type="button">PDF</button>
+                    </div>
+                    <p class="plan-output-note">SVG zachová vektorové čáry DXF, kamery a kabely. Fotografie a rastrové plány zůstanou rastrové.</p>
+                    <p id="outputStatus" role="status" aria-live="polite"></p>
+                </div>
+                <div class="plan-output-preview"><canvas id="outputPreview" aria-label="Náhled celého podlaží"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <dialog id="feedbackDialog" class="app-dialog-card" aria-labelledby="feedbackTitle">
+        <form id="feedbackForm">
+            <header class="feedback-heading">
+                <button id="btnFeedbackClose" type="button" class="icon-editor-close" aria-label="Zavřít">×</button>
+                <h2 id="feedbackTitle" class="app-dialog-title">Zpětná vazba</h2>
+            </header>
+            <p class="feedback-reply">Team GooM</p>
+            <div id="feedbackCompose">
+                <label for="feedbackMessage">Vaše zpráva</label>
+                <textarea id="feedbackMessage" class="app-dialog-input" rows="4" maxlength="800" required></textarea>
+                <div class="app-dialog-actions">
+                    <button id="btnFeedbackSend" class="btn-cad" type="submit">Odeslat zprávu</button>
+                </div>
+            </div>
+            <p id="feedbackStatus" role="status" hidden></p>
+            <div id="feedbackSuccess" class="feedback-success" role="status" hidden>
+                <span class="feedback-success-check" aria-hidden="true">✓</span>
+                <h3>Děkujeme!</h3>
+                <p>Vaše zpráva byla odeslána týmu GooM.</p>
+                <button id="btnFeedbackDone" class="btn-cad" type="button">Zavřít</button>
+            </div>
+        </form>
+    </dialog>
+
+    <div id="textModal" class="modal">
+        <form id="planTextForm" class="modal-content" role="dialog" aria-modal="true" aria-labelledby="textModalTitle">
+            <div class="modal-title" id="textModalTitle">Poznámka / Text</div>
+            <input type="text" id="devTextInput" aria-label="Zadejte text..." placeholder="Zadejte text...">
+            <label class="plan-text-size"><span>Velikost písma</span><input type="number" id="devTextSize" min="8" max="72" step="1" value="13" required></label>
+            <div class="modal-buttons">
+                <button id="btnCancelText" class="btn-cad" type="button">Zrušit</button>
+                <button id="btnSaveText" class="btn-cad" type="submit">Uložit text</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="cameraSettingsModal" class="modal">
+        <form id="cameraPickerForm" class="modal-content camera-picker-content" role="dialog" aria-modal="true" aria-labelledby="cameraPickerTitle">
+            <h2 id="cameraPickerTitle" class="modal-title">Model kamery</h2>
+            <div class="camera-picker-layout">
+                <div class="camera-type-list" role="group" aria-label="Typ kamery">
+                    <button type="button" class="camera-type-card" data-camera-type="cctv_bullet" aria-pressed="false">
+                        <img src="data:image/webp;base64,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" alt="">
+                        <span>Válcová kamera</span>
+                        <span class="camera-switch" aria-hidden="true"></span>
+                    </button>
+                    <button type="button" class="camera-type-card" data-camera-type="cctv_dome" aria-pressed="false">
+                        <img src="data:image/webp;base64,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" alt="">
+                        <span>Kopulová kamera</span>
+                        <span class="camera-switch" aria-hidden="true"></span>
+                    </button>
+                    <button type="button" class="camera-type-card" data-camera-type="cctv_ptz" aria-pressed="false">
+                        <span>PTZ kamera</span>
+                        <span class="camera-switch" aria-hidden="true"></span>
+                    </button>
+                </div>
+                <div class="camera-picker-fields">
+                    <fieldset class="camera-option-group">
+                        <legend>Rozlišení</legend>
+                        <select id="newCameraResolution" aria-label="Rozlišení" hidden></select>
+                        <div class="camera-options" id="cameraResolutionOptions"></div>
+                    </fieldset>
+                    <fieldset class="camera-option-group">
+                        <legend>Ohnisková vzdálenost objektivu</legend>
+                        <select id="newCameraLens" aria-label="Ohnisková vzdálenost objektivu" hidden></select>
+                        <div class="camera-options" id="cameraLensOptions"></div>
+                    </fieldset>
+                    <p id="cameraLensSummary" aria-live="polite"></p>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-cad" id="btnCameraSettingsCancel" type="button">Zrušit</button>
+                <button class="btn-cad camera-picker-apply" type="submit">Vybrat kameru</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="numberModal" class="modal">
+        <div class="modal-content" style="max-width: 360px; text-align: center; padding: 25px;">
+            <div class="modal-title" style="margin-bottom: 5px; justify-content: center;">Adresa prvku</div>
+            <div class="modal-text" style="margin-bottom: 20px; font-size: 12px;">Smažte pole pro návrat na "Auto".</div>
+
+            <div style="display: flex; align-items: center; justify-content: center; gap: 15px;">
+                <input type="number" id="devNumberInput" class="clean-number-input" style="width: 80px; text-align: center; font-size: 22px; font-weight: bold; padding: 8px; border-radius: 8px; border: 2px solid #313135; background: #1c1c1f; color: #ffffff; outline: none;" placeholder="Auto" min="1">
+                
+                <button id="btnSaveNumber" title="Uložit" style="background: transparent; border: none; cursor: pointer; font-size: 28px; padding: 0; display: flex; align-items: center; justify-content: center; transition: transform 0.1s;">
+                    ✅
+                </button>
+            </div>
+            
+            <div id="duplicateWarning" style="color: #ef4444; font-size: 13px; font-weight: bold; margin-top: 15px; display: none;">❌ Adresa je obsazena!</div>
+            <fieldset id="cameraOptics" hidden>
+                <legend>Kamera a její zorné pole</legend>
+                <label for="editCameraType">Typ kamery</label>
+                <select id="editCameraType" aria-label="Typ kamery"></select>
+                <label for="editCameraResolution">Rozlišení</label>
+                <select id="editCameraResolution" aria-label="Rozlišení"></select>
+                <label for="editCameraLens">Ohnisková vzdálenost objektivu</label>
+                <select id="editCameraLens" aria-label="Ohnisková vzdálenost objektivu"></select>
+                <label for="cameraAngle">Zorný úhel (°)</label>
+                <input id="cameraAngle" type="number" min="10" max="180" step="1" required>
+                <label for="cameraRange">Dosah na výkresu (px)</label>
+                <input id="cameraRange" type="number" min="10" max="2000" step="1" required>
+            </fieldset>
+        </div>
+    </div>
+
+    <div id="deviceTooltip" class="device-tooltip" style="position: fixed; opacity: 0; pointer-events: none; z-index: 1000;">
+        <div id="ttType">Typ prvku</div>
+        <div id="ttNumber">Adresa: <strong>-</strong></div>
+        <div id="ttCameraOptics" hidden></div>
+        <div id="ttLoop" hidden></div>
+        <div id="ttName">Poznámka</div>
+    </div>
+
+
+    <div id="overviewScreen" style="display: none;" role="dialog" aria-modal="true" aria-label="Přehled celé budovy">
+        <div id="overviewCanvasContainer">
+            <div id="overviewStage">
+                <canvas id="overviewCanvas" aria-hidden="true"></canvas>
+                <header class="overview-heading"><span class="overview-eyebrow">PŘEHLED BUDOVY</span><h2 id="overviewProjectTitle" data-user-content></h2><div id="overviewProjectStats" class="overview-project-stats"></div></header>
+                <section class="overview-scene">
+                    <section id="overviewFloorDetails" class="overview-floor-details" aria-live="polite">
+                        <div class="overview-detail-heading"><strong id="overviewDetailFloor"></strong><span id="overviewDetailPanel"></span></div>
+                        <div id="overviewDetailCounts"></div>
+                        <div class="overview-detail-addresses"><span id="overviewZonesLabel" class="overview-detail-zones-label">Adresy kamer</span><div id="overviewDetailZones" class="overview-detail-zones" role="region" aria-labelledby="overviewZonesLabel" tabindex="0"></div></div>
+                    </section>
+                </section>
+                <section class="overview-floor-panel"><div class="overview-artwork"><img id="overviewArtwork" src="NP.png?v=20261114-loading-27" alt="Dům, průmyslová budova a věž" loading="lazy" decoding="async"></div><header class="overview-floor-heading"><h3>Podlaží</h3><span>6 NP · 3 PP</span></header><div id="overviewFloors" role="group" aria-label="Vyberte podlaží"></div></section>
+            </div>
+        </div>
+        <div class="overview-footer">
+            <button id="btnCloseOverviewScreen" class="btn-cad overview-return" type="button" aria-label="Návrat na půdorys">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 12 12 17 22 12"></polyline><polyline points="2 17 12 22 22 17"></polyline></svg>
+                <span>ZPĚT</span>
+            </button>
+        </div>
+    </div>
+    <div id="tabletDeviceTools" class="tablet-device-tools" role="toolbar" aria-label="Ovládání zařízení" hidden>
+        <button type="button" data-tablet-action="select" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 3 15 8-7 2-3 7Z"/></svg></button>
+        <button type="button" data-tablet-action="pan" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 12V6a1.5 1.5 0 0 1 3 0v4-6a1.5 1.5 0 0 1 3 0v6-5a1.5 1.5 0 0 1 3 0v6-3a1.5 1.5 0 0 1 3 0v6a7 7 0 0 1-7 7h-1c-2 0-3.5-1-4.5-2.5l-3-4.5a1.7 1.7 0 0 1 2.8-2Z"/></svg></button>
+        <button type="button" data-tablet-action="duplicate"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M5 16a2 2 0 0 1-1-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 1"/></svg></button>
+        <button type="button" data-tablet-action="note"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v13h-8l-5 4v-4H5ZM8 8h8m-8 4h6"/></svg></button>
+        <button type="button" data-tablet-action="address"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4 6 20M18 4l-2 16M4 9h17M3 15h17"/></svg></button>
+        <button type="button" data-tablet-action="delete" class="tool-danger"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13m-8 3v7m4-7v7"/></svg></button>
+        <button type="button" data-tablet-action="undo"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 4-5 5 5 5M4 9h9a6 6 0 0 1 6 6v2"/></svg></button>
+    </div>
+    <script src="bootstrap.js?v=20261118-cctv-goom-paths-69"></script>
+</body>
+</html>
