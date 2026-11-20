@@ -3,6 +3,7 @@
   const ctx=canvas.getContext('2d'),grid=document.createElement('canvas'),gridContext=grid.getContext('2d');
   const motion=matchMedia('(prefers-reduced-motion: reduce)'),video=document.getElementById('heroVideo'),toggle=document.getElementById('heroMotion');
   const spacing=28,lifetime=1850;let width=0,height=0,ratio=1,frame=0,visible=true,anchor=null,segments=[],manualPause=false;
+  let replayTimer=0,replayAt=0,replayPending=false;
   const paused=()=>motion.matches||manualPause;
   function paint(now=performance.now()){
     frame=0;ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(grid,0,0);ctx.setTransform(ratio,0,0,ratio,0,0);
@@ -34,18 +35,26 @@
   function label(){if(!toggle)return;const text=(labels[document.documentElement.lang]||labels.cs)[paused()?1:0];toggle.setAttribute('aria-label',text);toggle.title=text;toggle.setAttribute('aria-pressed',String(paused()));toggle.classList.toggle('is-paused',paused());}
   function syncVideo(){
     label();if(!video)return;
+    clearTimeout(replayTimer);replayTimer=0;
     if(toggle)toggle.hidden=motion.matches||!!navigator.connection?.saveData||!video.classList.contains('ready');
     if(paused()||!visible||document.hidden||navigator.connection?.saveData){video.pause();return;}
+    if(replayPending){
+      const remaining=replayAt-performance.now();
+      if(remaining>0){video.pause();replayTimer=setTimeout(syncVideo,remaining);return;}
+      replayPending=false;delete video.dataset.loopWait;video.currentTime=0;
+    }
+    video.loop=false;video.controls=false;
     if(!video.src){video.muted=true;video.src=video.dataset.src;video.load();}
     video.defaultPlaybackRate=.55;video.playbackRate=.55;video.play().catch(()=>{if(toggle)toggle.hidden=true;});
   }
   video?.addEventListener('loadeddata',()=>{video.classList.add('ready');if(toggle)toggle.hidden=motion.matches||!!navigator.connection?.saveData;label();});
   video?.addEventListener('timeupdate',()=>{if(Number.isFinite(video.duration)){const fade=Math.min(1,video.currentTime/.65,(video.duration-video.currentTime)/.65);video.style.setProperty('--scene-opacity',String(Math.max(0,fade)*.55));}});
+  video?.addEventListener('ended',()=>{replayPending=true;replayAt=performance.now()+3000;video.dataset.loopWait='true';video.style.setProperty('--scene-opacity','0');syncVideo();});
   video?.addEventListener('error',()=>{video.classList.remove('ready');if(toggle)toggle.hidden=true;});
   toggle?.addEventListener('click',()=>{manualPause=!manualPause;anchor=null;segments=[];paint();syncVideo();});
   new ResizeObserver(resize).observe(hero);
-  new IntersectionObserver(entries=>{visible=entries[0].isIntersecting;if(visible){schedule();syncVideo();}else{if(frame)cancelAnimationFrame(frame);frame=0;segments=[];video?.pause();}},{threshold:0}).observe(hero);
+  new IntersectionObserver(entries=>{visible=entries[0].isIntersecting;if(visible){schedule();syncVideo();}else{if(frame)cancelAnimationFrame(frame);frame=0;segments=[];clearTimeout(replayTimer);replayTimer=0;video?.pause();}},{threshold:0}).observe(hero);
   motion.addEventListener('change',()=>{anchor=null;segments=[];paint();syncVideo();});
-  document.addEventListener('visibilitychange',()=>{if(document.hidden){if(frame)cancelAnimationFrame(frame);frame=0;anchor=null;segments=[];video?.pause();}else{schedule();syncVideo();}});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){if(frame)cancelAnimationFrame(frame);frame=0;anchor=null;segments=[];clearTimeout(replayTimer);replayTimer=0;video?.pause();}else{schedule();syncVideo();}});
   new MutationObserver(label).observe(document.documentElement,{attributes:true,attributeFilter:['lang']});resize();syncVideo();
 })();

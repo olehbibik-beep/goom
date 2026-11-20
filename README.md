@@ -2,7 +2,7 @@
 
 Public home page for GooM, hosted on GitHub Pages at **https://goom.cz/**.
 
-The page introduces the PZTS and CCTV editors, explains the workflow and PROJECT plans, and links to **support@goom.cz**. It supports Czech, English, German and Russian. The full-width hero uses the supplied `introsite.mp4`, muted at 0.55× speed with soft loop fades, and drafting trails that follow the pointer or a tablet touch. Background animation can be paused; reduced motion and data-saving preferences skip video playback.
+The page introduces the PZTS and CCTV editors, explains the workflow and PROJECT plans, and links to **support@goom.cz**. It supports Czech, English, German and Russian. The full-width hero uses the supplied `introsite.mp4`, muted at 0.55× speed with soft fades and a three-second pause between plays, and drafting trails that follow the pointer or a tablet touch. The encoded letterboxing in the opening footage is cropped only in the presentation layer. Background animation can be paused; reduced motion and data-saving preferences skip video playback.
 
 Buildless static files include `index.html`, `styles.css`, `launch.css`, `main.js`, `hero-trails.js`, `introsite.mp4`, `Logo.png`, `404.html`, `utility.css`, `utility-pages.js`, `intellectual-property/index.html`, `robots.txt` and `sitemap.xml`. No package installation or build step is required. `.nojekyll` disables Jekyll processing. Preserve `CNAME` with `goom.cz`. The `pzts/` and `cctv/` folders include the complete static editors and local PDF libraries.
 
@@ -19,7 +19,7 @@ No analytics or external fonts are loaded. Only the chosen display language is s
 
 Public pricing uses the editor's BASIC / PROJECT / COMPANY PROJECT cards, monthly and annual EUR prices, and labeled CZK estimates using the same reference rate as the editor.
 
-The current navigation uses a dark translucent bar with light links. PROJECT is visually recommended; card subtitles share the same size. The custom 404 uses absolute asset paths so it also works at missing nested URLs. Intellectual-property information is available in all four languages at `/intellectual-property/`; this notice preserves user-project ownership and third-party licences.
+The navigation uses a borderless translucent dark bar with light links. Pricing has a compact title, borderless cards and a starred best-choice marker. A program switch routes BASIC, PROJECT and COMPANY PROJECT buttons to PZTS or CCTV; EPS and SK are visibly reserved as coming soon. CCTV public-checkout availability is disclosed when selected. Large code-native SVG file and account marks explain DXF, SVG, SSO, Google and e-mail sign-in. The custom 404 uses absolute asset paths so it also works at missing nested URLs. Intellectual-property information is available in all four languages at `/intellectual-property/`; this notice preserves user-project ownership and third-party licences.
 
 Both editors export editable CAD geometry to AutoCAD 2007-compatible DXF in millimetres at the selected sheet size, alongside SVG. Geometry and text stay editable; curves may be approximated as polylines and raster backgrounds are excluded from DXF. BASIC retains a textual watermark. Use `.TECH` / `.cctv` for the native project data. The site explains SSO as the existing shared GooM account and persisted session for both paths on the same browser and origin, using Google or e-mail/password; application entitlements remain separate.
 
