@@ -2,22 +2,26 @@
 
 Public home page for GooM, hosted on GitHub Pages at **https://goom.cz/**.
 
-The page introduces the PZTS and CCTV editors, explains the workflow and PROJECT plans, and links to **support@goom.cz**. It supports Czech, English, German and Russian. The hero uses the editor's gray dotted background, pointer-responsive dots and whale logo. Reduced motion is respected.
+The page introduces the PZTS and CCTV editors, explains the workflow and PROJECT plans, and links to **support@goom.cz**. It supports Czech, English, German and Russian. The full-width hero uses the supplied `introsite.mp4`, muted at 0.55× speed with soft loop fades, and drafting trails that follow the pointer or a tablet touch. Background animation can be paused; reduced motion and data-saving preferences skip video playback.
 
-Buildless static files: `index.html`, `styles.css`, `main.js`, `hero-dots.js`, `Logo.png`, `robots.txt`, `sitemap.xml`. No package installation or build step is required. `.nojekyll` disables Jekyll processing. Preserve `CNAME` with `goom.cz`. The `pzts/` and `cctv/` folders include the complete static editors and local PDF libraries.
+Buildless static files include `index.html`, `styles.css`, `launch.css`, `main.js`, `hero-trails.js`, `introsite.mp4`, `Logo.png`, `404.html`, `utility.css`, `utility-pages.js`, `intellectual-property/index.html`, `robots.txt` and `sitemap.xml`. No package installation or build step is required. `.nojekyll` disables Jekyll processing. Preserve `CNAME` with `goom.cz`. The `pzts/` and `cctv/` folders include the complete static editors and local PDF libraries.
 
 Editor links:
 
 - PZTS: https://goom.cz/pzts/
 - CCTV: https://goom.cz/cctv/
 
-Both editors keep the existing Firebase project and cloud data. Sign in again on the new domain. Browser-only drafts remain on the old origin: save them to the cloud or export their project files on the old site, then open them on goom.cz. The old sites stay available for this purpose. Editor databases and product-specific settings use separate namespaces on the shared domain.
+Both editors keep the existing Firebase project and cloud data. Sign in again on the new domain. Browser-only drafts remain on the old origin: save them to the cloud or export their project files on the old site, then open them on goom.cz. The canonical editor URLs are the goom.cz paths above; source repositories can be maintained separately. Editor databases and product-specific settings use separate namespaces on the shared domain.
 
 Prices shown here match the editor's published PROJECT pricing. Checkout and account management remain in PZTS; no payment or account credentials are collected by this home page. The contact link opens the visitor's mail application; it does not send mail automatically.
 
 No analytics or external fonts are loaded. Only the chosen display language is stored locally in the browser.
 
-The navigation sits on a light bar inside the dotted hero, with a compact first screen on desktop and mobile. Public pricing uses the editor's BASIC / PROJECT / COMPANY PROJECT cards, monthly and annual EUR prices, and labeled CZK estimates using the same reference rate as the editor.
+Public pricing uses the editor's BASIC / PROJECT / COMPANY PROJECT cards, monthly and annual EUR prices, and labeled CZK estimates using the same reference rate as the editor.
+
+The current navigation uses a dark translucent bar with light links. PROJECT is visually recommended; card subtitles share the same size. The custom 404 uses absolute asset paths so it also works at missing nested URLs. Intellectual-property information is available in all four languages at `/intellectual-property/`; this notice preserves user-project ownership and third-party licences.
+
+Both editors export editable CAD geometry to AutoCAD 2007-compatible DXF in millimetres at the selected sheet size, alongside SVG. Geometry and text stay editable; curves may be approximated as polylines and raster backgrounds are excluded from DXF. BASIC retains a textual watermark. Use `.TECH` / `.cctv` for the native project data. The site explains SSO as the existing shared GooM account and persisted session for both paths on the same browser and origin, using Google or e-mail/password; application entitlements remain separate.
 
 Administration is available at `/pzts/admin.html` and `/cctv/admin.html` to authorized Firebase administrator accounts. User lists use server queries and cursors capped at 25 records, with prefix searches for e-mail/name, exact UID lookup, and access/activity filters. Message actions support read/unread and confirmed single/bulk deletion. The existing sender and message content remain immutable.
 
