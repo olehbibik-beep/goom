@@ -26,3 +26,12 @@ Both editors export editable CAD geometry to AutoCAD 2007-compatible DXF in mill
 Administration is available at `/pzts/admin.html` and `/cctv/admin.html` to authorized Firebase administrator accounts. User lists use server queries and cursors capped at 25 records, with prefix searches for e-mail/name, exact UID lookup, and access/activity filters. Message actions support read/unread and confirmed single/bulk deletion. The existing sender and message content remain immutable.
 
 `editor-usage.js` records approximate active time per signed-in account and application in `goomEditorUsage`. Hidden tabs and inactivity longer than two minutes stop accrual; the server prevents totals from increasing faster than elapsed time. This starts with the release and does not reconstruct earlier usage. Administrators can see totals; users cannot inspect another account's usage. Deploy the corresponding Firestore rules when changing these behaviors.
+
+
+## Guidance and project completion (20 November 2026)
+
+The ? menu opens the interactive 18-step spotlight tour or the four-language manual at https://goom.cz/guide/. The tour is also available from welcome, blocks accidental edits, and restores the previous dialogs and project unchanged.
+
+The account card displays initials and practice accumulated across all applications from the existing goomEditorUsage record. Only active time is counted. After ten idle minutes the editor locks behind a whale break screen; an explicit Continue resumes the same project.
+
+Save / Export includes a seven-part documentation check: name, drawing, main controller or NVR, detectors or cameras, wired connectivity to the main device, device names, and legend coverage. Its score describes documentation completeness, not engineering approval. User projects and Firebase rules are unchanged. Link.png / Link2.png are the supplied toolbar artwork; Logosite.png is the browser-tab icon.
