@@ -16,3 +16,12 @@
 #communityStats .community-stat-projects .community-stat-content{right:calc(var(--gauge-width)*130/280 + clamp(80px,9vw,160px));left:auto}
 #communityStats .community-stat-content strong{font-size:var(--stat-size,30px);margin-bottom:9px;font-weight:650}
 @media(max-width:650px){#communityStats{--gauge-width:90vw;height:92svh}#communityStats .community-gauge path{stroke-width:4}#communityStats .community-stat-content{width:clamp(76px,24vw,110px)}#communityStats .community-stat-hours .community-stat-content{left:calc(var(--gauge-width)*130/280 + 32px)}#communityStats .community-stat-projects .community-stat-content{right:calc(var(--gauge-width)*130/280 + 32px)}#communityStats .community-stat-content strong{font-size:min(var(--stat-size,28px),6vw)}#communityStats .community-stat-copy{font-size:10px}#communityStats .community-stat-copy small{font-size:8px}}
+
+/* The maker message sits in the open space between the two edge arcs. */
+#communityStats .community-intro{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:block;width:min(760px,calc(100% - var(--gauge-width)*220/280 + 24px));max-height:calc(100% - 32px);overflow-y:auto;padding:0;margin:0;text-align:center;z-index:2;scrollbar-width:thin}
+#communityStats .community-intro>.eyebrow{padding:0;margin:0 0 18px;text-align:center;justify-content:center}
+#communityStats .community-intro h2{font-size:clamp(24px,2.8vw,42px);line-height:1.18;margin:0 0 18px;letter-spacing:-.035em}
+#communityStats .community-intro .maker-lead{font-size:clamp(16px,1.4vw,21px);line-height:1.45;margin:0 0 18px}
+#communityStats .community-intro div>p:last-child{font-size:clamp(13px,1.1vw,16px);line-height:1.7;max-width:none;margin:0;color:#aebbb4}
+@media(max-aspect-ratio:1/1){#communityStats{--gauge-width:90vw}}
+@media(max-width:650px){#communityStats .community-intro>.eyebrow{font-size:8px;line-height:1.4;margin-bottom:12px}#communityStats .community-intro h2{font-size:clamp(18px,4.8vw,22px);line-height:1.2;margin-bottom:12px}#communityStats .community-intro .maker-lead{font-size:12px;line-height:1.4;margin-bottom:12px}#communityStats .community-intro div>p:last-child{font-size:11px;line-height:1.5}}
