@@ -1,6 +1,7 @@
 (() => {
     const byId = id => document.getElementById(id);
     let purchasePending = false;
+    const billingEnabled = false; // Enable after live Stripe prices, keys and webhook are configured.
     let returnHandled = false;
     const pricesInEuro = { monthly: 6.90, annual: 72.86, companyMonthly: 8.90, companyAnnual: 93.98 };
     const buyButtons = [...document.querySelectorAll('[data-buy-tier]')];
@@ -13,9 +14,12 @@
         byId('accountProStatus').textContent = administrative?adminStatus:tr(active ? 'PROJECT je aktivní.' : 'Váš účet používá bezplatnou verzi.');
         byId('accountProStatus').classList.toggle('active', active);
         const tier = window.getOwnProTier?.();
+        let suite=byId('proSuiteNote');if(!suite){suite=document.createElement('p');suite.id='proSuiteNote';suite.style.cssText='text-align:center;font-size:14px;margin:8px 0 16px';document.querySelector('.pro-pricing').before(suite);}
+        suite.textContent=window.goomUI('Jedno předplatné: PZTS · EPS · CCTV · SK','One subscription: PZTS · EPS · CCTV · SK','Ein Abonnement: PZTS · EPS · CCTV · SK','Одна подписка: PZTS · EPS · CCTV · SK');
         for (const button of buyButtons) {
             button.hidden = active || APP_PRODUCT !== 'PZTS';
-            button.disabled = purchasePending || active;
+            button.disabled = purchasePending || active || !billingEnabled;
+            button.title=billingEnabled?'':window.goomUI('Online platby připravujeme.','Online payments are coming soon.','Online-Zahlungen folgen in Kürze.','Онлайн-оплата скоро появится.');
         }
         const basicAction=document.querySelector('.pro-plan-basic .pro-plan-action');if(basicAction)basicAction.textContent=tr(active?'Základní':'Aktivní');
         for(const card of document.querySelectorAll('.pro-plan-standard,.pro-plan-company')){let badge=card.querySelector('.pro-entitlement-active');if(!badge){badge=document.createElement('div');badge.className='pro-entitlement-active';card.querySelector('.pro-plan-actions').append(badge);}badge.textContent=administrative?'ADMIN':tr('PROJECT je aktivní.');badge.hidden=!active||(tier==='company'?card.classList.contains('pro-plan-standard'):card.classList.contains('pro-plan-company'));}

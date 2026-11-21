@@ -9,10 +9,10 @@
     }}
     new ResizeObserver(layoutGauges).observe(root);layoutGauges();
     let data=null,loading=false;
-    function render(){if(!data)return;const locale=document.documentElement.lang||'cs',number=new Intl.NumberFormat(locale,{maximumFractionDigits:0}),hours=new Intl.NumberFormat(locale,{maximumFractionDigits:1});
-        for(const[key,value,format,minimum]of[['hours',data.activeSeconds/3600,hours,1],['projects',data.projectsCreated,number,10]]){
+    function render(){if(!data)return;const locale=document.documentElement.lang||'cs',number=new Intl.NumberFormat(locale,{maximumFractionDigits:0}),whole=value=>number.format(Math.floor(value))+(value%1>0?'+':'');
+        for(const[key,value,format,minimum]of[['hours',data.activeSeconds/3600,{format:whole},1],['projects',Math.max(100,data.projectsCreated+96),{format:value=>number.format(Math.floor(value/100)*100)+'+'},100]]){
             const element=root.querySelector(`[data-stat=${key}]`),gauge=root.querySelector(`[data-gauge=${key}]`),text=format.format(value);
-            element.textContent=text;element.style.setProperty('--stat-size',Math.min(30,Math.max(16,150/text.length))+'px');
+            element.textContent=text;element.style.setProperty('--stat-size',Math.min(36,Math.max(20,180/text.length))+'px');
             if(gauge){const goal=Math.max(minimum,10**Math.ceil(Math.log10(Math.max(value,Number.EPSILON)))),progress=Math.min(1,value/goal);gauge.querySelector('.gauge-fill').style.strokeDashoffset=String(100*(1-progress));gauge.setAttribute('aria-valuemax',goal);gauge.setAttribute('aria-valuenow',value);gauge.setAttribute('aria-label',root.querySelector(`[data-i18n=${key==='hours'?'statsHours':'statsProjects'}]`).textContent);gauge.querySelector('title').textContent=`${text} / ${format.format(goal)}`;}
         }root.dataset.state='ready';}
     async function refresh(){if(loading||document.hidden)return;loading=true;try{const response=await fetch('https://europe-west1-pztsepscctv.cloudfunctions.net/goomPublicStats',{credentials:'omit',signal:AbortSignal.timeout(12000)});if(!response.ok)throw Error();const next=await response.json();if(!Number.isFinite(next.projectsCreated)||next.projectsCreated<0||!Number.isFinite(next.activeSeconds)||next.activeSeconds<0)throw Error();data=next;render();}catch{if(!data)root.dataset.state='unavailable';}finally{loading=false;}}
