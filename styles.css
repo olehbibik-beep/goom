@@ -41,3 +41,11 @@
 @media(max-width:380px){.hero-dotted .site-header .brand{font-size:21px;gap:4px}.hero-dotted .site-header nav{margin-left:auto}.hero-dotted .hero-whale{width:108px;height:90px}.hero.hero-dotted{padding-inline:20px;gap:10px}.hero-dotted .hero-description{font-size:12px}.hero-dotted .hero-actions{gap:7px}.hero-dotted .hero-actions .button{font-size:10px;padding:10px 11px;gap:10px}}
 @media(max-width:380px){.pricing-section .price-amount b{font-size:24px}.pricing-section .price strong{font-size:21px}}
 .pricing-section .price-plan>.button{box-shadow:none}
+
+/* EPS joins the shared GooM workspace. */
+.hero-actions .editor-launch-eps{background:#f37b68;color:#311712;box-shadow:0 12px 36px #0003}
+.hero-actions .editor-launch-eps:hover{background:#ff9b8b}
+.hero-actions{flex-wrap:wrap}.hero-actions .editor-launch{min-width:180px;flex:1 1 180px}
+.eps-row .product-tag{color:#ff9b8b}.eps-row:hover{background:#f37b680b}
+@media(min-width:900px){.hero-cinematic .hero-copy{max-width:850px}.hero-actions .editor-launch{min-width:0;flex-basis:160px;padding-inline:20px}.hero-actions .editor-launch strong{font-size:27px}}
+@media(max-width:580px){.hero-actions .editor-launch{flex:1 1 130px;min-width:0}.hero-actions .editor-launch strong{font-size:23px}}

@@ -1,0 +1,13 @@
+:root[data-goom-product="EPS"]{--eps-accent:#fb6654;--eps-soft:#ffb29f}
+:root[data-goom-product="EPS"] #welcomeModal{--welcome-tint:86,29,24}
+:root[data-goom-product="EPS"] #welcomeModal .welcome-card{border-left:0;background:linear-gradient(105deg,rgba(111,31,22,.95),rgba(38,23,24,.93) 42%,rgba(32,24,25,.2) 78%);color:#fff}
+:root[data-goom-product="EPS"] #welcomeModal .welcome-panel{background:linear-gradient(90deg,rgba(116,35,25,.8),rgba(114,36,28,.34) 65%,transparent);color:#fff}
+:root[data-goom-product="EPS"] #welcomeModal :is(.welcome-brand,.welcome-heading,.welcome-system-name,.welcome-description,.welcome-copyright,.welcome-copyright strong,.welcome-copyright small,.email-auth-form label,.auth-link){color:#fff!important}
+:root[data-goom-product="EPS"] #welcomeModal .welcome-art-space img{opacity:1;object-fit:cover;width:100%;height:100%}
+
+:root[data-goom-product="EPS"] #togglePirCoverage,:root[data-goom-product="EPS"] #btnDetectionSettings{display:none!important}
+:root[data-goom-product="EPS"] .device-btn.active{border-color:var(--eps-accent);background:rgba(239,68,68,.13)}
+:root[data-goom-product="EPS"] .device-btn img{width:26px;height:26px;object-fit:contain}
+:root[data-goom-product="EPS"] .main-menu-content{background:linear-gradient(110deg,#522621,#211c1e 68%)}
+:root[data-goom-product="EPS"] #loopSelect{max-width:140px}
+@media(max-width:650px){:root[data-goom-product="EPS"] #welcomeModal .welcome-panel{background:linear-gradient(90deg,rgba(100,28,22,.98),rgba(61,26,25,.94))}}
