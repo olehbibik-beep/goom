@@ -8,7 +8,7 @@
     palette.replaceChildren();
     for(const d of SK_CATALOG){const button=document.createElement('button');button.type='button';button.className='device-btn';button.dataset.type=d.type;button.title=tr(d.labels[0]);button.setAttribute('aria-label',button.title);const image=document.createElement('img');image.src=`assets/devices/${d.type}.svg`;image.width=26;image.height=26;image.alt='';button.append(image);palette.append(button);}
     palette.append(textTools);
-    document.getElementById('btnIntroPlay').hidden=true;
+    document.getElementById('btnIntroPlay').hidden=false;
     for(const id of ['togglePirCoverage','btnDetectionSettings'])document.getElementById(id)?.setAttribute('hidden','');
     const art=document.querySelector('#welcomeModal .welcome-art-space img');
     const finishArt=()=>document.getElementById('welcomeModal').classList.remove('is-art-loading');

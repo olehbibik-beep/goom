@@ -43,6 +43,7 @@
       if(remaining>0){video.pause();replayTimer=setTimeout(syncVideo,remaining);return;}
       replayPending=false;delete video.dataset.loopWait;video.currentTime=0;
     }
+    video.defaultMuted=true;video.muted=true;video.volume=0;
     video.loop=false;video.controls=false;
     if(!video.src){video.muted=true;video.src=video.dataset.src;video.load();}
     video.defaultPlaybackRate=.55;video.playbackRate=.55;video.play().catch(()=>{if(toggle)toggle.hidden=true;});

@@ -3,6 +3,9 @@
     const play = document.getElementById('btnIntroPlay');
     const video = document.getElementById('welcomeIntroVideo');
     const status = document.getElementById('welcomeIntroStatus');
+    video.defaultMuted = true;
+    video.muted = true;
+    video.volume = 0;
     let playHadFocus = false;
 
     function stop(restoreFocus = false) {
@@ -28,6 +31,8 @@
         playHadFocus = document.activeElement === play;
         play.hidden = true;
         video.hidden = false;
+        video.muted = true;
+        video.volume = 0;
         video.muted = true;
         video.defaultPlaybackRate = 1;
         video.playbackRate = 1;

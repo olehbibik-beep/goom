@@ -1,6 +1,6 @@
 (() => {
     // Change this version whenever publishing application files together.
-    const version = '20261121-eps-media-2';
+    const version = "20261121-silent-1";
     let started = false;
     let pdfLoading = null;
     let pdfAttempt = 0;
