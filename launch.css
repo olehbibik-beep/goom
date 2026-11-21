@@ -52,3 +52,14 @@
 .hero-video{transform:scale(1.2);border:0;outline:0;box-shadow:none;background:transparent}
 @media(max-width:760px){.hero-feature-icon{width:20px;height:24px}.hero-formats{gap:10px 18px}.hero-formats b{font-size:12px}.hero-formats small{font-size:10px}.format-marks{gap:26px}.feature-icon{width:49px;height:58px}.format-marks b,.account-mark b{font-size:25px}.pricing-controls{gap:12px}.program-picker{width:100%;max-width:360px;min-width:0}.program-picker button{padding:8px 6px}.pricing-section .section-intro h2{font-size:28px}.pricing-section .price-plan,.pricing-section .project-plan{min-height:0}.pricing-section{padding-top:26px}}
 @media(max-width:380px){.hero-feature-icon{width:18px;height:21px}.hero-formats{gap:8px 13px}.hero-formats b{font-size:11px}.hero-formats small{font-size:9px}.format-marks{gap:20px}.feature-icon{width:43px;height:52px}.format-marks>span{gap:10px}.format-marks b{font-size:23px}.account-mark .feature-icon{width:53px;height:53px}}
+
+/* Four independent editors, shared visual language. */
+#heroDotted .hero-actions .editor-launch-eps{background:#ef6b61;color:#351511}#heroDotted .hero-actions .editor-launch-eps:hover{background:#ff8a80}
+#heroDotted .hero-actions [data-editor="cctv"]{background:#c0a3ee;color:#2e164b}#heroDotted .hero-actions [data-editor="cctv"]:hover{background:#d2b8fa}
+#heroDotted .hero-actions .editor-launch-sk{background:#9ed6ed;color:#163c4e}#heroDotted .hero-actions .editor-launch-sk:hover{background:#beeafa}
+#heroDotted .hero-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}#heroDotted .hero-actions .editor-launch{min-width:0;width:auto;padding:17px 20px}#heroDotted .hero-actions .editor-launch small{white-space:normal;line-height:1.4;font-size:12px}#heroDotted .hero-actions .editor-launch>span:nth-child(2){min-width:0}
+.eps-row .product-tag{color:#ef6b61}.cctv-row .product-tag{color:#c0a3ee}.sk-row .product-tag{color:#9ed6ed}
+@media(max-width:580px){#heroDotted .hero-actions{gap:8px}#heroDotted .hero-actions .editor-launch{padding:13px 12px;gap:9px}#heroDotted .hero-actions .editor-launch small{font-size:10px}#heroDotted .hero-actions .editor-launch strong{font-size:24px}#heroDotted .hero-actions .launch-icon{width:24px}#heroDotted .hero-actions .launch-arrow{font-size:18px}}
+@media(max-width:350px){#heroDotted .hero-actions .editor-launch{padding:12px 9px;gap:6px}#heroDotted .hero-actions .launch-icon{display:none}}
+
+#heroDotted .hero-actions{width:100%;grid-template-columns:repeat(2,minmax(0,1fr));justify-items:stretch;max-width:850px}#heroDotted .hero-actions .editor-launch{width:100%;max-width:none;min-width:0;box-sizing:border-box;justify-self:stretch}

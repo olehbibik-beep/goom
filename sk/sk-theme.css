@@ -1,0 +1,8 @@
+:root[data-goom-product="SK"] #welcomeModal{--welcome-tint:17,51,70}
+:root[data-goom-product="SK"] #welcomeModal .welcome-card{border-left:0;background:#153344}
+:root[data-goom-product="SK"] #welcomeModal :is(.welcome-brand,.welcome-heading,.welcome-system-name,.welcome-description,.welcome-copyright,.welcome-copyright strong,.welcome-copyright small,.email-auth-form label,.auth-link){color:#fff!important}
+:root[data-goom-product="SK"] #welcomeModal .welcome-art-space img{width:100%;height:100%;object-fit:cover}
+:root[data-goom-product="SK"] .welcome-intro,:root[data-goom-product="SK"] #togglePirCoverage,:root[data-goom-product="SK"] #btnDetectionSettings{display:none!important}
+:root[data-goom-product="SK"] .device-btn.active{border-color:#38bdf8;background:#38bdf821}
+:root[data-goom-product="SK"] .device-btn img{width:26px;height:26px;object-fit:contain}
+:root[data-goom-product="SK"] .main-menu-content{background:linear-gradient(110deg,#16465c,#1b252d 68%)}
