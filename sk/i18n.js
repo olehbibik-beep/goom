@@ -391,13 +391,13 @@
         ['Platba byla zrušena. Váš účet zůstává beze změny.', 'Payment was cancelled. Your account is unchanged.', "Die Zahlung wurde abgebrochen. Ihr Konto bleibt unverändert.", "Оплата отменена. Данные аккаунта не изменились."],
         ['Rozšiřte svůj účet o nástroje PROJECT.', 'Upgrade your account with PROJECT tools.', "Erweitern Sie Ihr Konto um PROJECT-Funktionen.", "Добавьте в свой аккаунт функции PROJECT."], ['Cloudové ukládání plánů', 'Cloud plan storage', "Pläne in der Cloud speichern", "Хранение планов в облаке"],
         ['Editor nabídek a ikon', 'Menu and icon editor', "Menü- und Symboleditor", "Редактор меню и значков"], ['Tipy při plánování', 'Planning hints', "Planungstipps", "Подсказки по проектированию"], ['Koupit PROJECT', 'Buy PROJECT', "PROJECT kaufen", "Купить PROJECT"],
-        ['Jednorázová licence pro PZTS', 'One-time PZTS license', "Einmallizenz für PZTS", "Разовая лицензия PZTS"], ['PZTS, SK, CCTV a SK', 'PZTS, SK, CCTV and SK', "PZTS, SK, CCTV und SK", "PZTS, SK, CCTV и SK"],
+        ['Jednorázová licence pro PZTS', 'One-time PZTS license', "Einmallizenz für PZTS", "Разовая лицензия PZTS"], ['PZTS, EPS, CCTV a SK', 'PZTS, EPS, CCTV and SK', "PZTS, EPS, CCTV und SK", "PZTS, EPS, CCTV и SK"],
         ['Firemní údaje můžete upravit později. PROJECT je dostupné v uživatelském účtu.', 'You can edit company details later. PROJECT is available in your account.', "Sie können Firmendaten später bearbeiten. PROJECT ist im Benutzerkonto verfügbar.", "Данные компании можно изменить позже. PROJECT доступен в аккаунте."],
         ['Ovládání detektoru', 'Detector controls', "Melder-Steuerung", "Управление датчиком"], ['Výběr', 'Select', "Auswählen", "Выбрать"], ['Posun', 'Pan', "Verschieben", "Перемещение"], ['Výběr detektoru', 'Select detector', "Melder auswählen", "Выбрать датчик"],
         ['Posun plánu', 'Pan plan', "Plan verschieben", "Переместить план"], ['Otočit o 90°', 'Rotate 90°', "Um 90° drehen", "Повернуть на 90°"], ['Duplikovat', 'Duplicate', "Duplizieren", "Дублировать"], ['Odstranit vybrané', 'Delete selected', "Auswahl löschen", "Удалить выделенное"],
         ['Synchronizace je připravena', 'Sync is ready', "Synchronisierung bereit", "Синхронизация готова"], ['Místní ukládání', 'Local saving', "Lokal speichern", "Локальное сохранение"],
         ['PZTS PROJECT — 39 € / měsíc', 'PZTS PROJECT — €39 / month', "PZTS PROJECT — 39 € pro Monat", "PZTS PROJECT — 39 € в месяц"], ['PROJECT Suite — 99 € / měsíc', 'PROJECT Suite — €99 / month', "PROJECT Suite — 99 € pro Monat", "PROJECT Suite — 99 € в месяц"],
-        ['Měsíční předplatné PZTS', 'Monthly PZTS subscription', "PZTS-Monatsabo", "Месячная подписка PZTS"], ['Měsíčně: PZTS, SK, CCTV a SK', 'Monthly: PZTS, SK, CCTV and SK', "Monatlich: PZTS, SK, CCTV und SK", "Ежемесячно: PZTS, SK, CCTV и SK"],
+        ['Měsíční předplatné PZTS', 'Monthly PZTS subscription', "PZTS-Monatsabo", "Месячная подписка PZTS"], ['Měsíčně: PZTS, EPS, CCTV a SK', 'Monthly: PZTS, EPS, CCTV and SK', "Monatlich: PZTS, EPS, CCTV und SK", "Ежемесячно: PZTS, EPS, CCTV и SK"],
         ['Předplatné se obnovuje každý měsíc od data nákupu. Automatické obnovení můžete zrušit v účtu.', 'Your subscription renews monthly from the purchase date. You can cancel automatic renewal in your account.', "Das Abo verlängert sich monatlich ab Kaufdatum. Die Verlängerung lässt sich im Konto kündigen.", "Подписка ежемесячно продлевается с даты покупки. Автопродление можно отключить в аккаунте."],
         ['Spravovat předplatné', 'Manage subscription', "Abo verwalten", "Управлять подпиской"], ['Přístup do: {0}', 'Access until: {0}', "Zugang bis: {0}", "Доступ до {0}"],
         ['Automatické obnovení je vypnuto.', 'Automatic renewal is off.', "Automatische Verlängerung ist aus.", "Автопродление отключено."], ['Měsíční předplatné.', 'Monthly subscription.', "Monatsabo.", "Месячная подписка."],
@@ -471,15 +471,15 @@
         ['Vyberte podlaží', 'Select a floor', "Geschoss auswählen", "Выберите этаж"], ['Zpět na půdorys', 'Back to plan', "Zum Grundriss zurück", "Вернуться к плану"], ['Počet prvků: {0}', 'Device count: {0}', "Anzahl Geräte: {0}", "Количество устройств: {0}"], ['ZPĚT', 'BACK', "ZURÜCK", "НАЗАД"]
     ];
 
-    const locales = { cs: 'cs-CZ', en: 'en-GB', de: 'de-DE', ru: 'ru-RU' };
+    const locales = { cs: 'cs-CZ', en: 'en-GB', de: 'de-DE', ru: 'ru-RU', pl:'pl-PL' };
     window.goomProduct = 'SK';
-    const welcomeAcronyms = { cs: 'PZTS', en: 'I&HAS', de: 'GMA', ru: 'СОТС' };
+    const welcomeAcronyms = { cs: 'PZTS', en: 'I&HAS', de: 'GMA', ru: 'СОТС',pl:'SSWiN' };
     const normalizeLanguage = value => Object.hasOwn(locales, value) ? value : 'cs';
     const catalog = new Map();
     for (const row of rows) {
         const [source, cs, en, de, ru] = row.length === 4 ? [row[0], ...row] : row;
-        const entry = { cs, en, de, ru };
-        for (const alias of [source, cs, en, de, ru]) if (!catalog.has(alias)) catalog.set(alias, entry);
+        const entry = { cs, en, de, ru, pl:window.goomPolish?.(en)||en };
+        for (const alias of [source, cs, en, de, ru, entry.pl]) if (!catalog.has(alias)) catalog.set(alias, entry);
     }
     let language = 'cs';
     try { language = normalizeLanguage(localStorage.getItem('goom.language')); } catch {}

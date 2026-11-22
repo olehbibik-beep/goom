@@ -10,19 +10,21 @@
         'Předplatné EPS zatím nelze zakoupit.':['Předplatné EPS zatím nelze zakoupit.','EPS subscriptions are not available for purchase yet.','EPS-Abonnements sind noch nicht zum Kauf verfügbar.','Покупка подписки EPS пока не подключена.'],
         'Zóny':['Adresy','Addresses','Adressen','Адреса']
     };
-    for(const d of EPS_CATALOG)extra[d.labels[0]]=d.labels;
-    window.tr=function(source,...values){const key=Array.isArray(source)?source.map((part,i)=>part+(i<values.length?`{${i}}`:'')).join(''):source;const words=extra[key];return words?words[({cs:0,en:1,de:2,ru:3})[document.documentElement.lang]??0].replace(/\{(\d+)\}/g,(_,n)=>String(values[Number(n)]??'')):baseTr(source,...values);};
+    for(const d of EPS_CATALOG){if(d.labels.length===4)d.labels.push(window.goomPolish(d.labels[1]));extra[d.labels[0]]=d.labels;}
+    for(const words of Object.values(extra))if(words.length===4)words.push(window.goomPolish(words[1]));
+    window.tr=function(source,...values){const key=Array.isArray(source)?source.map((part,i)=>part+(i<values.length?`{${i}}`:'')).join(''):source;const words=extra[key];return words?words[({cs:0,en:1,de:2,ru:3,pl:4})[document.documentElement.lang]??0].replace(/\{(\d+)\}/g,(_,n)=>String(values[Number(n)]??'')):baseTr(source,...values);};
     const palette=document.getElementById('deviceSetTools'),textTools=document.getElementById('textTools');
     palette.replaceChildren();
     for(const d of EPS_CATALOG){const button=document.createElement('button');button.type='button';button.className='device-btn';button.dataset.type=d.type;button.title=tr(d.labels[0]);button.setAttribute('aria-label',button.title);const image=document.createElement('img');image.src=`assets/devices/${d.type}.svg`;image.width=26;image.height=26;image.alt='';button.append(image);palette.append(button);}
     palette.append(textTools);
     document.getElementById('btnIntroPlay').hidden=false;
-    for(const id of ['togglePirCoverage','btnDetectionSettings'])document.getElementById(id)?.setAttribute('hidden','');
+    document.getElementById('togglePirCoverage')?.setAttribute('hidden','');
+    document.getElementById('btnDetectionSettings')?.removeAttribute('hidden');
     const art=document.querySelector('#welcomeModal .welcome-art-space img');
     const finishArt=()=>document.getElementById('welcomeModal').classList.remove('is-art-loading');
     if(art.complete)finishArt();else{art.addEventListener('load',finishArt,{once:true});art.addEventListener('error',finishArt,{once:true});}
     function updateLanguage(){
-        const language=document.documentElement.lang,index=({cs:0,en:1,de:2,ru:3})[language]??0;
+        const language=document.documentElement.lang,index=({cs:0,en:1,de:2,ru:3,pl:4})[language]??0;
         document.querySelector('.welcome-system-name').textContent=extra['Poplachový zabezpečovací a tísňový systém'][index];
         document.querySelector('.welcome-brand').textContent='EPS';
         for(const d of EPS_CATALOG){const button=palette.querySelector(`[data-type="${d.type}"]`);if(button){button.title=d.labels[index];button.setAttribute('aria-label',button.title);}}

@@ -5,7 +5,7 @@
 :root[data-goom-product="EPS"] #welcomeModal :is(.welcome-brand,.welcome-heading,.welcome-system-name,.welcome-description,.welcome-copyright,.welcome-copyright strong,.welcome-copyright small,.email-auth-form label,.auth-link){color:#fff!important}
 :root[data-goom-product="EPS"] #welcomeModal .welcome-art-space img{opacity:1;object-fit:cover;width:100%;height:100%}
 
-:root[data-goom-product="EPS"] #togglePirCoverage,:root[data-goom-product="EPS"] #btnDetectionSettings{display:none!important}
+:root[data-goom-product="EPS"] #togglePirCoverage{display:none!important}
 :root[data-goom-product="EPS"] .device-btn.active{border-color:var(--eps-accent);background:rgba(239,68,68,.13)}
 :root[data-goom-product="EPS"] .device-btn img{width:26px;height:26px;object-fit:contain}
 :root[data-goom-product="EPS"] .main-menu-content{background:linear-gradient(110deg,#522621,#211c1e 68%)}
