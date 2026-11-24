@@ -2,11 +2,11 @@
 // 4. STORAGE: DATABÁZE A HISTORIE
 // ==========================================
 
-const PROJECT_FILE_EXTENSION = '.cctv';
-const PROJECT_FILE_EXTENSIONS = [PROJECT_FILE_EXTENSION, '.tech', '.bips'];
+const PROJECT_FILE_EXTENSION = '.TECH';
+const PROJECT_FILE_EXTENSIONS = [PROJECT_FILE_EXTENSION, '.cctv', '.tech', '.bips'];
 
 function stripProjectFileExtension(name) {
-    const extension = PROJECT_FILE_EXTENSIONS.find(ext => name.toLowerCase().endsWith(ext));
+    const extension = PROJECT_FILE_EXTENSIONS.find(ext => name.toLowerCase().endsWith(ext.toLowerCase()));
     return extension ? name.slice(0, -extension.length) : name;
 }
 
@@ -31,6 +31,7 @@ function sanitizeFloors(floorDataArray) {
             devices,
             cables: Array.isArray(f.cables) ? f.cables.filter(cable => cable && ids.has(cable.fromId) && ids.has(cable.toId)) : [],
             addressReservations: mergeAddressReservations(Array.isArray(f.addressReservations) ? f.addressReservations : []),
+            applicationReservations:f.applicationReservations||{},
             showConnections: f.showConnections !== false,
             wallThreshold: Number.isFinite(f.wallThreshold) ? Math.min(255, Math.max(0, f.wallThreshold)) : 100,
             pirRangePixels: 300,
@@ -43,6 +44,7 @@ function sanitizeFloors(floorDataArray) {
             rasterSource: typeof f.rasterSource==='string' && /^data:image\//.test(f.rasterSource) ? f.rasterSource : null,
             sourceName: typeof f.sourceName === 'string' ? f.sourceName : '',
             legend: sanitizeProjectLegend(f.legend),
+            foreignLegends:sanitizeForeignLegends(f.foreignLegends),
             wallMask: null
         };
 
@@ -104,8 +106,8 @@ function saveStateToHistory() {
     const state = {
         customDeviceIcons: JSON.parse(JSON.stringify(sanitizeProjectIcons(customDeviceIcons))),
         fData: floors.map(f => ({
-            name: f.name, imgData: f.imgData, legend: f.legend ? JSON.parse(JSON.stringify(f.legend)) : null,
-            addressReservations: f.addressReservations,
+            name: f.name, imgData: f.imgData, legend: f.legend ? JSON.parse(JSON.stringify(f.legend)) : null, foreignLegends:f.foreignLegends||[],
+            addressReservations: f.addressReservations, applicationReservations:{...(f.applicationReservations||{}),[APP_PRODUCT]:f.addressReservations||[]},
             devices: JSON.parse(JSON.stringify(f.devices)), cables: JSON.parse(JSON.stringify(f.cables)), showConnections: f.showConnections,
             wallThreshold: f.wallThreshold, pirRangePixels: f.pirRangePixels,
             planTheme: f.planTheme, satellite: f.satellite, vectorPlan: f.vectorPlan, pdfSource: f.pdfSource, rasterSource: f.rasterSource, pdfPage: f.pdfPage, sourceName: f.sourceName
@@ -159,7 +161,8 @@ function getProjectDataPayload() {
     let slider = document.getElementById('deviceSizeSlider');
     let dSize = (slider && slider.value) ? parseInt(slider.value) : 16;
     return { 
-        version: "1.0",
+        version: "2.0",
+        sharedProject:true,
         format: "TECH",
         application: APP_PRODUCT,
         ownerUid:window.projectOwnerUid||window.getFirebaseUser?.()?.uid||null,
@@ -168,10 +171,12 @@ function getProjectDataPayload() {
         currentFloorIndex: currentFloorIndex, 
         currentMaxLines: currentMaxLines,
         deviceSize: dSize,
+        applicationSettings:{...projectApplicationSettings,[APP_PRODUCT]:{deviceSize:dSize,currentMaxLines}},
         customDeviceIcons: sanitizeProjectIcons(customDeviceIcons),
+        applicationIcons:{...projectApplicationIcons,[APP_PRODUCT]:sanitizeProjectIcons(customDeviceIcons)},
         pirCoverageVisible: isPirCoverageVisible(),
         floors: floors.map(f => ({
-            name: f.name, imgData: f.imgData, devices: f.devices, cables: f.cables, legend: f.legend,
+            name: f.name, imgData: f.imgData, devices: f.devices.map(snapshotPlanDevice), cables: f.cables.map(c=>({...c,ownerApplication:c.ownerApplication||APP_PRODUCT,routeColor:c.routeColor||cableRouteColor(f.devices.find(d=>d.id===c.fromId)||{},f.devices.find(d=>d.id===c.toId)||{})})), legend: f.legend?{...f.legend,ownerApplication:APP_PRODUCT}:null, foreignLegends:f.foreignLegends||[],
             addressReservations: f.addressReservations,
             showConnections: f.showConnections, wallThreshold: f.wallThreshold, pirRangePixels: f.pirRangePixels,
             planTheme: f.planTheme, satellite: f.satellite, vectorPlan: f.vectorPlan, pdfSource: f.pdfSource, rasterSource: f.rasterSource, pdfPage: f.pdfPage, sourceName: f.sourceName
@@ -214,14 +219,14 @@ async function loadFromDB(options={}) {
     const data = await getSavedProjectData();
     if (!Array.isArray(data?.floors) || !data.floors.length) return false;
     if(options.requireUid&&data.ownerUid&&data.ownerUid!==options.requireUid)return false;
-    const loadedFloors = await loadFloorsImages(data.floors);
+    const loadedFloors = await loadFloorsImages(await prepareSharedProject(data));
     if(options.requireUid&&window.getFirebaseUser?.()?.uid!==options.requireUid)return false;
     window.projectOwnerUid=data.ownerUid||window.getFirebaseUser?.()?.uid||null;
     window.restoredPlanViewport=data.viewport;
     if (data.currentMaxLines) currentMaxLines = data.currentMaxLines;
-    customDeviceIcons = sanitizeProjectIcons(data.customDeviceIcons);
+    customDeviceIcons = projectIconsFromData(data);
     const slider = document.getElementById('deviceSizeSlider');
-    if (data.deviceSize && slider) slider.value = data.deviceSize;
+    if (slider) slider.value = projectDeviceSizeFromData(data);
     updateLoopSelect();
     floors = loadedFloors;
     setPirCoverageVisible(data.pirCoverageVisible !== false);
@@ -237,7 +242,7 @@ async function loadFromDB(options={}) {
 function downloadProjectFile() {
     if(!floors.length){showAppAlert(tr('Žádná data k exportu.'),tr('Экспорт проекта'));return;}
     try{
-        const payload = { ...getProjectDataPayload(), format: 'CCTV' };
+        const payload = { ...getProjectDataPayload(), format: 'TECH' };
         const blob=new Blob([JSON.stringify(payload)],{type:'application/json;charset=utf-8'});
         const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;
         link.download = (stripProjectFileExtension(projectName || '') || 'projekt') + PROJECT_FILE_EXTENSION;

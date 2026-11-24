@@ -51,7 +51,7 @@ function cloudRowDate(project) {
 
 function cloudOperationMessage(error, action) {
     if (error.code === 'goom/cloud-limit' || error.details?.reason === 'project-limit') return tr('V cloudu je už 5 projektů. Nejdříve některý odstraňte.');
-    if (error.code === 'goom/cloud-size' || error.details?.reason === 'project-size') return tr('Cloudový projekt může mít nejvýše 24 MiB. Větší projekt uložte jako soubor .cctv.');
+    if (error.code === 'goom/cloud-size' || error.details?.reason === 'project-size') return tr('Cloudový projekt může mít nejvýše 24 MiB. Větší projekt uložte jako soubor .TECH.');
     if (error.code === 'storage/unauthorized') return tr(action === 'open'
         ? 'Firebase Storage nepovolil otevření tohoto projektu.'
         : 'Firebase Storage nepovolil uložení projektu. Obraťte se na správce.');

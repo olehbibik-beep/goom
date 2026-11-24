@@ -73,6 +73,7 @@ function getCameraOptics(device) {
     };
 }
 function hasDeviceCoverage(device) {
+    if(!isOwnPlanEntity(device))return false;
     return false;
 }
 const STANDARD_FLOOR_NAMES=['3PP','2PP','1PP','1NP','2NP','3NP','4NP','5NP','6NP'];
