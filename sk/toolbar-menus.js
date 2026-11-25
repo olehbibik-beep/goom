@@ -1,5 +1,9 @@
 function previewLockedToolbarMenu(menu){
-    const locked=menu.id!=='default';displayedToolbarMenu=menu;selectedTool='select';activeDeviceIds.clear();
+    if (isFreeToolbarMenu(menu)) { applyToolbarMenu(menu, false); return; }
+    const locked = true;
+    displayedToolbarMenu = menu;
+    selectedTool = 'select';
+    activeDeviceIds.clear();
     const types=new Set([...menu.deviceTypes,'floorPassage','trunkTool']);
     toolbarMenuDeviceButtons.forEach(button=>{button.hidden=!types.has(button.dataset.type);button.innerHTML=toolbarMenuButtonContent(button.dataset.type,menu);button.classList.remove('active');});
     document.getElementById('textTools').hidden=!types.has('textNode');document.getElementById('deviceSetTools').dataset.previewLocked=String(locked);
@@ -55,13 +59,24 @@ const proToolbarMenu = {
         ])];
     }))
 };
-const builtInToolbarMenus = [defaultToolbarMenu, proToolbarMenu];
+const drawingTypes = Object.keys(cadCatalog[APP_PRODUCT]).filter(type => validToolbarMenuTypes.has(type));
+const drawingToolbarMenu = {
+    id: 'drawing',
+    get name() { return drawingToolbarMenuName(); },
+    deviceTypes: [...drawingTypes, 'floorPassage', 'trunkTool', 'textNode'],
+    icons: Object.fromEntries(drawingTypes.map(type => [type, [{
+        kind: 'stockIcon', stockType: type, cadSymbol: true, size: 342, x: 200, y: 200,
+        rotation: 0, color: '#171e25', stroke: 12
+    }]]))
+};
+const isFreeToolbarMenu = menu => menu?.id === 'default' || isDrawingToolbarMenu(menu);
+const builtInToolbarMenus = [defaultToolbarMenu, proToolbarMenu, drawingToolbarMenu];
 const isBuiltInToolbarMenu = menu => builtInToolbarMenus.some(preset => preset.id === menu.id);
 const isPremiumToolbarId = id => typeof id === 'string' && id.startsWith('shared-');
 const isPersonalToolbarMenu = menu => !isBuiltInToolbarMenu(menu) && !isPremiumToolbarId(menu.id);
 const personalToolbarMenuCount = () => toolbarMenus.filter(isPersonalToolbarMenu).length;
 const canEditToolbarMenus = () => Boolean(window.hasProAccess?.() || window.hasAdminAccess?.());
-const canEditToolbarPreset = menu => Boolean(menu && canEditToolbarMenus()
+const canEditToolbarPreset = menu => Boolean(menu && !isDrawingToolbarMenu(menu) && canEditToolbarMenus()
     && (isPersonalToolbarMenu(menu) || window.hasAdminAccess?.()));
 
 let toolbarMenus = [...builtInToolbarMenus];
@@ -105,7 +120,7 @@ function sanitizeToolbarMenus(value) {
     const seenIds = new Set(builtInToolbarMenus.map(menu => menu.id));
     const legacyDefaultNames = ['Default', 'Основное меню', 'Hlavní nabídka', 'Main menu'];
     const bundledTypeCount = defaultToolbarMenu.deviceTypes.length;
-    return value.filter(menu => menu && typeof menu === 'object' && menu.id !== 'pro')
+    return value.filter(menu => menu && typeof menu === 'object' && menu.id !== 'pro' && !isDrawingToolbarMenu(menu))
         .filter(menu => menu.id !== 'default' || Object.keys(menu.icons || {}).length
             || ![bundledTypeCount, bundledTypeCount - NEW_TOOLBAR_DEVICE_TYPES.length].includes(menu.deviceTypes?.length)
             || !legacyDefaultNames.includes(menu.name))
@@ -224,7 +239,7 @@ async function watchSharedToolbarMenus(uid, allowed) {
     try {
         const db = await window.getFirebaseDatabase();
         if (generation !== toolbarSyncGeneration) return;
-        for (const preset of builtInToolbarMenus) {
+        for (const preset of builtInToolbarMenus.filter(menu => !isDrawingToolbarMenu(menu))) {
             const stop = sharedToolbarRef(db, preset).onSnapshot(snapshot => {
                 if (generation === toolbarSyncGeneration && !snapshot.metadata?.hasPendingWrites) {
                     updateSharedToolbarMenu(preset, snapshot.data());
@@ -249,7 +264,8 @@ async function watchSharedToolbarMenus(uid, allowed) {
 
 function applyToolbarMenu(menu, persist = true) {
     if (!menu) return;
-    if(menu.id!=='default'&&!canEditToolbarMenus()){previewLockedToolbarMenu(menu);return;}
+    if (!isFreeToolbarMenu(menu) && !canEditToolbarMenus()) { previewLockedToolbarMenu(menu); return; }
+    const drawingChanged = isDrawingToolbarMenu(displayedToolbarMenu) !== isDrawingToolbarMenu(menu);
     document.getElementById('deviceSetTools').dataset.previewLocked='false';
     const cycleButton = document.getElementById('btnCycleToolbarMenu');
     activeToolbarMenuId = menu.id;
@@ -273,7 +289,8 @@ function applyToolbarMenu(menu, persist = true) {
         element.hidden = !beforeHasDevice || !afterHasDevice;
     });
 
-    if (!visibleTypes.has(selectedTool === 'plainText' ? 'textNode' : selectedTool)) {
+    if (drawingChanged || !visibleTypes.has(selectedTool === 'plainText' ? 'textNode' : selectedTool)) {
+        if (drawingChanged) activeDeviceIds.clear();
         selectedTool = 'select';
         document.querySelectorAll('#deviceSelector .device-btn').forEach(button => button.classList.remove('active'));
     }
@@ -288,12 +305,17 @@ function applyToolbarMenu(menu, persist = true) {
     if (persist) {
         preferredSharedToolbarMenuId = null;
         saveToolbarMenus();
-        updateProjectLegendsFromMenu(menu);
+        if (!isDrawingToolbarMenu(menu)) updateProjectLegendsFromMenu(menu);
     }
+    window.goomRefreshDeviceStrip?.();
     if (typeof requestRedraw === 'function') requestRedraw();
 }
 
 function applyToolbarMenuIcons(menu = getActiveToolbarMenu()) {
+    if (isDrawingToolbarMenu(menu)) {
+        refreshCustomDeviceIcons(menu.icons);
+        return;
+    }
     customDeviceIcons = cloneIconShapes(menu?.icons || {});
     refreshCustomDeviceIcons(customDeviceIcons);
 }
@@ -692,7 +714,7 @@ document.getElementById('btnCycleToolbarMenu').addEventListener('click', async (
         if (animate) await tools.animate([{ opacity: 1, transform: 'translateY(0)' },
             { opacity: 0, transform: 'translateY(-12px)' }], { duration: 120, easing: 'ease-in' }).finished;
         const activeIndex = toolbarMenus.findIndex(menu => menu.id === (displayedToolbarMenu?.id||activeToolbarMenuId));
-        if(canEditToolbarMenus())applyToolbarMenu(toolbarMenus[(activeIndex + 1) % toolbarMenus.length]);else previewLockedToolbarMenu(toolbarMenus[(activeIndex + 1) % toolbarMenus.length]);
+        applyToolbarMenu(toolbarMenus[(activeIndex + 1) % toolbarMenus.length]);
         tools.scrollLeft = 0;
         if (isSystemReady&&canEditToolbarMenus()) triggerAutoSave();
         if (animate) await tools.animate([{ opacity: 0, transform: 'translateY(12px)' },
@@ -739,3 +761,12 @@ function updateToolbarAccount() {
 }
 updateToolbarAccount();
 document.addEventListener('goom-account-changed', updateToolbarAccount);
+
+window.addEventListener('goom-language-changed', () => {
+    if (isDrawingToolbarMenu(displayedToolbarMenu)) {
+        document.getElementById('activeToolbarMenuName').textContent = drawingToolbarMenuName();
+        const name = drawingToolbarMenuName();
+        document.getElementById('btnCycleToolbarMenu').setAttribute('aria-label', tr`Текущий набор меню: ${name}. Переключить набор`);
+    }
+    if (iconEditorModal.style.display === 'flex') renderToolbarMenuPresets();
+});

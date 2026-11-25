@@ -131,6 +131,7 @@ function sanitizeIconShapes(shapes) {
         size: Number.isFinite(shape.size) ? Math.min(400, Math.max(10, shape.size)) : 90,
         ...(iconShapeHeightRatios.has(shape.kind) && Number.isFinite(shape.height) ? { height: Math.min(400, Math.max(10, shape.height)) } : {}),
         ...(shape.kind === 'stockIcon' ? { stockType: shape.stockType } : {}),
+        ...(shape.kind === 'stockIcon' && shape.cadSymbol === true ? { cadSymbol: true } : {}),
         rotation: Number.isFinite(shape.rotation) ? Math.max(-180, Math.min(180, shape.rotation)) : 0,
         color: /^#[0-9a-f]{6}$/i.test(shape.color) ? shape.color : '#22c55e',
         fill: shape.fill === true,
@@ -199,6 +200,10 @@ function drawEditorShape(ctx, shape) {
     ctx.translate(shape.x, shape.y);
     ctx.rotate(shape.rotation * Math.PI / 180);
     if (shape.kind === 'stockIcon') {
+        if (shape.cadSymbol && drawCadSymbol(ctx, shape.stockType, shape.size / 34, 'original')) {
+            ctx.restore();
+            return;
+        }
         drawDevice(ctx, { type: shape.stockType, x: 0, y: 0 }, true, 'dark', { baseSize: shape.size / 4, defaultIcon: true,routeStyle:{color:shape.routeColor,width:shape.routeWidth} });
         ctx.restore();
         return;

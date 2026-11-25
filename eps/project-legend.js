@@ -21,6 +21,7 @@ function sanitizeProjectLegend(value) {
                 kind:s.kind,x:s.x,y:s.y,size:s.size,rotation:s.rotation,color:s.color,fill:s.fill,fillColor:s.fillColor,stroke:s.stroke,fontWeight:s.fontWeight,
                 ...(Number.isFinite(s.height) ? {height:s.height} : {}),
                 ...(s.kind==='stockIcon' ? {stockType:s.stockType} : {}),
+                ...(s.kind==='stockIcon' && s.cadSymbol === true ? {cadSymbol:true} : {}),
                 ...(Number.isFinite(s.routeWidth) ? {routeWidth:s.routeWidth} : {}),
                 ...(typeof s.routeColor==='string' ? {routeColor:s.routeColor} : {}),
                 text:typeof s.text==='string'?s.text.slice(0,8):''
@@ -31,7 +32,7 @@ function sanitizeProjectLegend(value) {
 function projectLegendEntries(menu = getActiveToolbarMenu(), icons = customDeviceIcons) {
     return [...new Set(menu.deviceTypes)].filter(type => legendDeviceTypes.has(type)).map(type => ({
         type, label: toolbarMenuTypes.find(item => item.type === type)?.title || type,
-        shapes: sanitizeIconShapes(icons[type])
+        ...(isDrawingToolbarMenu(menu) && Object.hasOwn(cadCatalog[APP_PRODUCT], type) ? {cadSymbol:true, shapes:[]} : {shapes:sanitizeIconShapes(icons[type])})
     }));
 }
 function includeNewDeviceInLegend(floor, type, cadSymbol = false) {

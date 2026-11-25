@@ -214,7 +214,7 @@ document.getElementById('deviceSelector').addEventListener('click', (e) => {
     
     document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active')); 
     btn.classList.add('active');
-    selectedCadType = null;
+
     selectedTool = btn.dataset.type;
     window.tabletPanMode = false;
     if (selectedTool === 'plainText') {
@@ -486,7 +486,7 @@ window.addEventListener('keydown', (e) => {
     }
 
     if (e.key === 'Escape') { 
-        selectedCadType = null;
+
         let modalClosed = false;
         document.querySelectorAll('.modal').forEach(m => { if (m.style.display === 'flex' || m.style.display === 'block') { m.style.display = 'none'; modalClosed = true; } });
         let hPanel = document.getElementById('helpPanel');
@@ -902,7 +902,8 @@ window.addEventListener('pointerup', (e) => {
                 
                 let tempDev = { id: newId, x: snap.x, y: snap.y, type: selectedTool, manualName: "", loopId: loopId, rotation: 0, manualNumber: null };
                 if (APP_PRODUCT === 'CCTV' && Object.hasOwn(CCTV_CAMERAS, selectedTool)) {
-                    Object.assign(tempDev, cameraPlacementOptions);
+                    Object.assign(tempDev, isDrawingToolbarMenu(displayedToolbarMenu)
+                        ? {megapixels: 4, lensId: tempDev.type === "cctv_ptz" ? "" : "2.8"} : cameraPlacementOptions);
                 }
                 if (selectedTool === 'plainText' || selectedTool === 'textNode') {
                     tempDev.type = 'textNode';
@@ -914,7 +915,7 @@ window.addEventListener('pointerup', (e) => {
                 if (['pir', 'pir_wl'].includes(selectedTool)) {
                     tempDev.pirRangePixels = floor.pirRangePixels;
                 }
-                if (selectedCadType === tempDev.type) tempDev.cadSymbol = true;
+                if (isDrawingToolbarMenu(displayedToolbarMenu) && Object.hasOwn(cadCatalog[APP_PRODUCT], tempDev.type)) tempDev.cadSymbol = true;
                 placePlanDevice(floor, tempDev);
                 saveStateToHistory();
             } else { activeDeviceIds.clear(); }
