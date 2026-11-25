@@ -42,11 +42,11 @@
     document.querySelector('.pricing-note').textContent=tr('pricingNote');
     document.getElementById('pricing').dataset.pricingProgram='suite';
   }
+  for(const[lang,copy]of Object.entries({"cs":{"suiteFree":"PZTS · EPS · CCTV · SK","suiteIncluded":"Jedno předplatné: PZTS · EPS · CCTV · SK","currencyNote":"Ceny jsou v českých korunách (CZK).","pricingNote":"Online platby připravujeme."},"en":{"suiteFree":"PZTS · EPS · CCTV · SK","suiteIncluded":"One subscription: PZTS · EPS · CCTV · SK","currencyNote":"Prices are in Czech crowns (CZK).","pricingNote":"Online payments are coming soon."},"de":{"suiteFree":"PZTS · EPS · CCTV · SK","suiteIncluded":"Ein Abonnement: PZTS · EPS · CCTV · SK","currencyNote":"Preise in tschechischen Kronen (CZK).","pricingNote":"Online-Zahlungen folgen in Kürze."},"ru":{"suiteFree":"PZTS · EPS · CCTV · SK","suiteIncluded":"Одна подписка: PZTS · EPS · CCTV · SK","currencyNote":"Цены указаны в чешских кронах (CZK).","pricingNote":"Онлайн-оплата скоро появится."},"pl":{"suiteFree":"PZTS · EPS · CCTV · SK","suiteIncluded":"Jedna subskrypcja: PZTS · EPS · CCTV · SK","currencyNote":"Ceny podano w koronach czeskich (CZK).","pricingNote":"Płatności online będą dostępne wkrótce."}}))Object.assign(text[lang],copy);
   function renderPrices(){
-    const prices=period==='annual'?{pro:72.86,company:93.98}:{pro:6.90,company:8.90};
-    const formatter=new Intl.NumberFormat({cs:'cs-CZ',en:'en-IE',de:'de-DE',ru:'ru-RU',pl:'pl-PL'}[language],{style:'currency',currency:'EUR'});
+    const prices=period==='annual'?{pro:10454,company:15681}:{pro:990,company:1485};
+    const formatter=new Intl.NumberFormat({cs:'cs-CZ',en:'en-IE',de:'de-DE',ru:'ru-RU',pl:'pl-PL'}[language],{style:'currency',currency:'CZK',minimumFractionDigits:0,maximumFractionDigits:0});
     document.querySelectorAll('[data-price]').forEach(el=>el.textContent=formatter.format(prices[el.dataset.price]));
-    document.querySelectorAll('[data-czk]').forEach(el=>el.textContent=' / CZK '+new Intl.NumberFormat({cs:'cs-CZ',en:'en-IE',de:'de-DE',ru:'ru-RU'}[language]).format(Math.round(prices[el.dataset.czk]*24.425)));
     document.getElementById('pricing').dataset.billingPeriod=period;
     document.querySelectorAll('[data-price-period]').forEach(el=>el.textContent=tr(period==='annual'?'perYear':'perMonth'));
     document.querySelectorAll('[data-period]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.period===period)));
