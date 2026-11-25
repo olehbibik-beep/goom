@@ -162,3 +162,27 @@ table{min-width:720px;font-size:.86rem}th,td{padding:10px 8px}th{font-size:.74re
 .capacity-columns ul { padding-left: 20px; }
 .capacity-columns li { margin-block: 7px; }
 .capacity-columns input { width: 75px; margin-left: 6px; }
+
+.infrastructure-capacity .section-header { margin-bottom: 16px; }
+.infrastructure-capacity .section-header h1 { margin: 0; font-size: clamp(20px, 2.4vw, 29px); }
+.capacity-columns article { background: #fafbfd; }
+.capacity-columns article > p { margin: 8px 0 14px; }
+.capacity-columns a { color: #324d9b; text-underline-offset: .16em; }
+.quota-summary { display: flex; align-items: center; gap: 14px; margin: 12px 0; padding: 12px; background: #eff3f8; border-radius: 10px; }
+.quota-summary p, .quota-meter p { margin: 4px 0; color: var(--muted); font-size: .83rem; }
+.quota-ring { width: 84px; aspect-ratio: 1; flex: none; border-radius: 50%; background: radial-gradient(circle closest-side, #fff 74%, transparent 76%), conic-gradient(var(--quota-color) 0 var(--used), #dbe5e4 var(--used) 100%); display: grid; place-content: center; text-align: center; line-height: 1.15; }
+.quota-ring strong { font-size: 18px; }
+.quota-ring small { font-size: 11px; color: var(--muted); }
+.quota-ring, .quota-meter { --quota-color: var(--program-color, #398150); }
+.quota-ring[data-level=near], .quota-meter[data-level=near] { --quota-color: #bc760d; }
+.quota-ring[data-level=full], .quota-meter[data-level=full] { --quota-color: #b74443; }
+.quota-editor-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 8px; }
+.quota-meter { padding: 8px 10px; border: 1px solid #dce4ec; background: #fff; border-radius: 8px; margin-block: 5px; }
+.quota-meter-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 7px; overflow-wrap: anywhere; }
+.quota-meter-heading span { color: var(--quota-color); font-weight: 700; font-size: .84rem; }
+.quota-meter progress { width: 100%; height: 8px; display: block; margin: 6px 0; appearance: none; border: 0; border-radius: 999px; background: #dce5ed; color: var(--quota-color); }
+.quota-meter progress::-webkit-progress-bar { border-radius: 999px; background: #dce5ed; }
+.quota-meter progress::-webkit-progress-value { border-radius: 999px; background: var(--quota-color); }
+.quota-meter progress::-moz-progress-bar { border-radius: 999px; background: var(--quota-color); }
+.quota-controls { display: grid; gap: 8px; margin-top: 14px; }
+.quota-controls input { min-width: 76px; }

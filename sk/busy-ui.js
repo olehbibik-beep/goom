@@ -7,5 +7,20 @@
         entry.count++;scope.setAttribute('aria-busy','true');let ended=false;
         return ()=>{if(ended)return;ended=true;if(--entry.count===0){entry.element.remove();scopes.delete(scope);scope.removeAttribute('aria-busy');}};
     };
-    window.goomBusyPaint=()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+    window.goomBusyPaint = () => new Promise(resolve => {
+            const timeout = setTimeout(resolve, 120);
+            requestAnimationFrame(() => requestAnimationFrame(() => { clearTimeout(timeout); resolve(); }));
+        });
+    window.withGoomBusy = async operation => {
+        const end = window.startGoomBusy();
+        const started = performance.now();
+        try {
+            if (!document.hidden) await window.goomBusyPaint();
+            return await operation();
+        } finally {
+            const remaining = 220 - (performance.now() - started);
+            if (remaining > 0 && !document.hidden) await new Promise(resolve => setTimeout(resolve, remaining));
+            end();
+        }
+    };
 })();

@@ -5,6 +5,8 @@
     const reposNode = document.getElementById('adminCapacityRepos');
     const estimate = document.getElementById('adminCapacityEstimate');
     const proposal = document.getElementById('adminCapacityProposal');
+    const bucketTarget = document.getElementById('adminCapacityBucketTarget');
+    const bucketChart = document.getElementById('adminCapacityBucketChart');
     const number = new Intl.NumberFormat('ru', { maximumFractionDigits: 2 });
     const mib = 1024 * 1024;
     const formatBytes = bytes => number.format(bytes / mib) + ' МиБ';
@@ -15,6 +17,33 @@
         const element = document.createElement(tag);
         element.textContent = text;
         return element;
+    }
+
+    function meter(label, used, limit, detail, color = '') {
+        const item = node('div', '');
+        item.className = 'quota-meter';
+        const ratio = limit > 0 ? used / limit : 0;
+        item.dataset.level = ratio >= 1 ? 'full' : ratio >= .8 ? 'near' : 'available';
+        if (color) item.style.setProperty('--program-color', color);
+        const heading = node('div', '');
+        heading.className = 'quota-meter-heading';
+        heading.append(node('strong', label), node('span', number.format(ratio * 100) + '%'));
+        const bar = node('progress', '');
+        bar.max = limit || 1;
+        bar.value = Math.min(used, bar.max);
+        bar.setAttribute('aria-label', `${label} · ${detail}`);
+        item.append(heading, bar, node('p', detail));
+        return item;
+    }
+
+    function renderBucketTarget() {
+        bucketChart.replaceChildren();
+        const target = bucketTarget.valueAsNumber * 1024 * mib;
+        if (!capacity?.usage || !bucketTarget.validity.valid || !Number.isFinite(target) || target <= 0) return;
+        const used = capacity.usage.bytes;
+        bucketChart.append(meter('Мой ориентир для бакета', used, target,
+            `${formatBytes(used)} из ${formatBytes(target)} · ` + (used <= target
+                ? `до ориентира ${formatBytes(target - used)}` : `превышение на ${formatBytes(used - target)}`)));
     }
 
     function renderEstimate() {
@@ -32,13 +61,31 @@
         const usage = data.usage
             ? `${formatBytes(data.usage.bytes)} в бакете ${data.bucketName}. Данные Monitoring на ${new Date(data.usage.reportedAt).toLocaleString('ru')}.`
             : 'Объём бакета не получен из Cloud Monitoring. Откройте «Использование Storage».';
-        const list = node('ul', '');
+        const total = data.editors.length * data.projectLimit;
+        const free = data.editors.reduce((sum, editor) => sum + editor.available, 0);
+        const measured = data.editors.reduce((sum, editor) => sum + editor.bytes, 0);
+        const unknown = data.editors.reduce((sum, editor) => sum + editor.unmeasured, 0);
+        const list = node('div', '');
+        list.className = 'quota-editor-list';
+        const colors = {PZTS:'#4b8521', EPS:'#c95043', CCTV:'#8051bc', SK:'#128198'};
         for (const editor of data.editors) {
-            const measured = editor.unmeasured ? `, без размера у ${editor.unmeasured}` : '';
-            list.append(node('li', `${editor.application} · занято ${editor.used} из ${data.projectLimit} · свободно ${editor.available} · ${formatBytes(editor.bytes)}${measured}`));
+            const unknownBytes = editor.unmeasured ? ` · без размера у ${editor.unmeasured}` : '';
+            list.append(meter(editor.application, editor.used, data.projectLimit,
+                `Занято ${editor.used} из ${data.projectLimit} · свободно ${editor.available} · ${formatBytes(editor.bytes)}${unknownBytes}`, colors[editor.application]));
         }
-        dataNode.replaceChildren(node('p', usage), node('h3', 'Мои проекты GooM'), list,
-            node('p', `Ограничение файла ${formatBytes(data.maxProjectBytes)}. Слоты учитывают и незавершённые загрузки.`));
+        const summary = node('div', '');
+        summary.className = 'quota-summary';
+        const ring = node('div', '');
+        ring.className = 'quota-ring';
+        ring.style.setProperty('--used', `${((total - free) / (total || 1)) * 100}%`);
+        ring.dataset.level = !free ? 'full' : free <= total * .2 ? 'near' : 'available';
+        ring.append(node('strong', `${free}/${total}`), node('small', 'свободно'));
+        const stats = node('div', '');
+        stats.append(node('strong', 'Мои проекты GooM'), node('p', `Известный объём файлов ${formatBytes(measured)}${unknown ? ` · без размера у ${unknown}` : ''}`),
+            node('p', `До ${formatBytes(data.maxProjectBytes)} на файл. Слоты учитывают незавершённые загрузки.`));
+        summary.append(ring, stats);
+        dataNode.replaceChildren(node('p', usage), summary, list);
+        renderBucketTarget();
         renderEstimate();
     }
 
@@ -50,20 +97,28 @@
         return size * 1024;
     }
 
+    async function siteSize() {
+        const response = await fetch('../site-build.json', {signal:AbortSignal.timeout(8000), cache:'no-cache'});
+        if (!response.ok) throw Error('Published manifest unavailable');
+        const { bytes, files } = await response.json();
+        if (!Number.isSafeInteger(bytes) || bytes <= 0 || !Number.isSafeInteger(files) || files <= 0) throw Error('Invalid manifest size');
+        return {bytes, files};
+    }
+
     window.clearGoomInfrastructureCapacity = () => {
         generation++;
         capacity = null;
         dataNode.replaceChildren();
         reposNode.replaceChildren();
         estimate.textContent = '';
+        bucketChart.replaceChildren();
         section.hidden = true;
     };
 
     window.loadGoomInfrastructureCapacity = async user => {
         const request = ++generation;
         status.textContent = 'Запрашиваем данные…';
-        const repos = ['goom', 'pzts', 'cctv'];
-        const results = await Promise.allSettled([(async () => {
+        const [firebase, github, site] = await Promise.allSettled([(async () => {
             const token = await user.getIdToken();
             const response = await fetch('https://europe-west1-pztsepscctv.cloudfunctions.net/goomAdmin', {
                 method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
@@ -72,21 +127,27 @@
             const { result } = await response.json();
             if (!response.ok || !Array.isArray(result?.editors)) throw Error('Capacity unavailable');
             return result;
-        })(), ...repos.map(repoSize)]);
+        })(), repoSize('goom'), siteSize()]);
         if (request !== generation) return;
-        const [firebase, ...github] = results;
         if (firebase.status === 'fulfilled') renderCapacity(firebase.value);
         else {
             capacity = null;
             dataNode.replaceChildren(node('p', 'Не удалось получить данные проекта Firebase. Откройте консоль или обновите этот раздел.'));
             renderEstimate();
+            renderBucketTarget();
         }
-        reposNode.replaceChildren(...github.map((result, index) => {
-            if (result.status !== 'fulfilled') return node('li', `${repos[index]} · размер недоступен`);
-            const bytes = result.value;
-            return node('li', `${repos[index]} · ${formatBytes(bytes)} · ${formatBytes(Math.max(0, 1024 * mib - bytes))} до ориентира 1 ГиБ`);
-        }));
+        const repoTarget = 1_000_000_000;
+        reposNode.replaceChildren(github.status === 'fulfilled'
+            ? meter('olehbibik-beep/goom', github.value, repoTarget,
+                `${formatBytes(github.value)} · ${formatBytes(Math.max(0, repoTarget - github.value))} до ориентира 1 ГБ`)
+            : node('p', 'Размер основного репозитория GitHub недоступен.'));
+        if (site.status === 'fulfilled') {
+            const {bytes, files} = site.value;
+            reposNode.append(meter('Файлы выпуска Pages', bytes, repoTarget,
+                `${number.format(files)} файлов · ${formatBytes(bytes)} · ${formatBytes(Math.max(0, repoTarget - bytes))} до 1 ГБ`));
+        }
         status.textContent = '';
     };
     proposal.addEventListener('input', renderEstimate);
+    bucketTarget.addEventListener('input', renderBucketTarget);
 })();

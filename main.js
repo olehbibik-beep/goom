@@ -51,10 +51,27 @@
     document.getElementById('pricing').dataset.pricingProgram='suite';
   }
   for(const[lang,copy]of Object.entries({"cs":{"suiteFree":"PZTS · EPS · CCTV · SK","suiteIncluded":"Jedno předplatné: PZTS · EPS · CCTV · SK","currencyNote":"Ceny jsou v českých korunách (CZK).","pricingNote":"Online platby připravujeme."},"en":{"suiteFree":"PZTS · EPS · CCTV · SK","suiteIncluded":"One subscription: PZTS · EPS · CCTV · SK","currencyNote":"Prices are in Czech crowns (CZK).","pricingNote":"Online payments are coming soon."},"de":{"suiteFree":"PZTS · EPS · CCTV · SK","suiteIncluded":"Ein Abonnement: PZTS · EPS · CCTV · SK","currencyNote":"Preise in tschechischen Kronen (CZK).","pricingNote":"Online-Zahlungen folgen in Kürze."},"ru":{"suiteFree":"PZTS · EPS · CCTV · SK","suiteIncluded":"Одна подписка: PZTS · EPS · CCTV · SK","currencyNote":"Цены указаны в чешских кронах (CZK).","pricingNote":"Онлайн-оплата скоро появится."},"pl":{"suiteFree":"PZTS · EPS · CCTV · SK","suiteIncluded":"Jedna subskrypcja: PZTS · EPS · CCTV · SK","currencyNote":"Ceny podano w koronach czeskich (CZK).","pricingNote":"Płatności online będą dostępne wkrótce."}}))Object.assign(text[lang],copy);
+  // Display estimates based on the Czech National Bank fixing for 25 Nov 2026.
+  const referenceRates = { CZK: 1, EUR: 24.435, PLN: 5.456 };
+  const pricingCurrencies = { cs: "CZK", en: "EUR", de: "EUR", ru: "EUR", pl: "PLN" };
+  const pricingLocales = { cs: "cs-CZ", en: "en-IE", de: "de-DE", ru: "ru-RU", pl: "pl-PL" };
+  const conversionCopy = {
+    en: "EUR estimates at the Czech National Bank rate on 25 Nov 2026. Base prices are in CZK.",
+    de: "EUR-Richtwerte zum Kurs der Tschechischen Nationalbank vom 25.11.2026. Basispreise in CZK.",
+    ru: "Ориентировочные цены в EUR по курсу Чешского национального банка на 25.11.2026. Базовые цены в CZK.",
+    pl: "Ceny orientacyjne w PLN według kursu Czeskiego Banku Narodowego z 25.11.2026. Ceny bazowe w CZK."
+  };
   function renderPrices(){
-    const prices=period==='annual'?{pro:10454,company:15681}:{pro:990,company:1485};
-    const formatter=new Intl.NumberFormat({cs:'cs-CZ',en:'en-IE',de:'de-DE',ru:'ru-RU',pl:'pl-PL'}[language],{style:'currency',currency:'CZK',minimumFractionDigits:0,maximumFractionDigits:0});
-    document.querySelectorAll('[data-price]').forEach(el=>el.textContent=formatter.format(prices[el.dataset.price]));
+    const prices = period === "annual" ? {pro: 10454, company: 15681} : {pro: 990, company: 1485};
+    const currency = pricingCurrencies[language];
+    const fractionDigits = currency === "CZK" ? 0 : 2;
+    const formatter = new Intl.NumberFormat(pricingLocales[language], {style:"currency", currency, minimumFractionDigits:fractionDigits, maximumFractionDigits:fractionDigits});
+    for (const element of document.querySelectorAll("[data-price]")) {
+      const base = prices[element.dataset.price];
+      element.textContent = (currency === "CZK" ? "" : "≈ ") + formatter.format(base / referenceRates[currency]);
+    }
+    document.querySelector(".pricing-currency").textContent = conversionCopy[language] || tr("currencyNote");
+    document.getElementById("pricing").dataset.currency = currency;
     document.getElementById('pricing').dataset.billingPeriod=period;
     document.querySelectorAll('[data-price-period]').forEach(el=>el.textContent=tr(period==='annual'?'perYear':'perMonth'));
     document.querySelectorAll('[data-period]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.period===period)));

@@ -316,7 +316,10 @@ function exportToPDF() { return exportPlanFile('pdf'); }
 document.getElementById('btnMenuPrint').addEventListener('click', () => {
  document.getElementById('mainMenuModal').style.display = 'none'; void printPlanDirect();
 });
-document.getElementById('btnExportBIPS').addEventListener('click', () => { downloadProjectFile(); saveModal.style.display='none'; });
+document.getElementById('btnExportBIPS').addEventListener('click', () => {
+    saveModal.style.display = 'none';
+    void window.withGoomBusy(downloadProjectFile);
+});
 for (const [id,format] of [['btnExportPNG','png'],['btnExportPDF','pdf'],['btnExportSVG','svg'],['btnExportDXF','dxf'],['btnExportJPEG','jpeg']]) {
  document.getElementById(id).addEventListener('click', () => exportPlanFile(format));
 }
@@ -624,7 +627,8 @@ function moveDraggedDevices(floor, x, y, freeMove) {
     if (!drag.devices) {
         drag.ids = activeDeviceIds.has(draggedDevice.id) ? new Set(activeDeviceIds) : new Set([draggedDevice.id]);
         const devicesById = new Map(floor.devices.map(device => [device.id, device]));
-        drag.devices = floor.devices.filter(device => drag.ids.has(device.id)&&isOwnPlanEntity(device));
+        drag.devices = floor.devices.filter(device => drag.ids.has(device.id) && isOwnPlanEntity(device) && device.type !== "trunkJunction");
+        drag.ids = new Set(drag.devices.map(device => device.id));
         drag.cables = floor.cables.flatMap(cable => {
             if(!isOwnPlanEntity(cable))return[];
             if (!drag.ids.has(cable.fromId) && !drag.ids.has(cable.toId)) return [];
@@ -646,20 +650,19 @@ function moveDraggedDevices(floor, x, y, freeMove) {
     for (const device of drag.devices) {
         device.x += deltaX;
         device.y += deltaY;
-        if(device.attachedCableId){const route=floor.cables.find(c=>c.id===device.attachedCableId),a=floor.devices.find(d=>d.id===route?.fromId),b=floor.devices.find(d=>d.id===route?.toId);if(a&&b){const dx=b.x-a.x,dy=b.y-a.y;device.attachedT=Math.max(0,Math.min(1,((device.x-a.x)*dx+(device.y-a.y)*dy)/(dx*dx+dy*dy||1)));}}
+
     }
     for (const { cable, from, to, movesTogether } of drag.cables) {
-        if (!Number.isFinite(cable.h1x) || !cable.isCustom) {
-            recalcCableHandles(cable, from, to);
-        } else if (movesTogether) {
+        if (cable.kind === "trunk") continue;
+        if (!Number.isFinite(cable.h1x)) recalcCableHandles(cable, from, to);
+        else if (movesTogether) {
             for (let index = 1; index <= 3; index++) {
-                cable[`h${index}x`] += deltaX;
-                cable[`h${index}y`] += deltaY;
+                cable["h" + index + "x"] += deltaX;
+                cable["h" + index + "y"] += deltaY;
             }
-        } else {
-            refreshAutomaticCableEnds(cable, from, to);
         }
     }
+    updateTrunkJunctions(floor);
 }
 
 function clearCanvasDrag() {
@@ -744,7 +747,7 @@ container.addEventListener('pointerdown', (e) => {
 
         for (let i = floor.devices.length - 1; i >= 0; i--) {
             let dev = floor.devices[i]; let inBody = false; let inText = false;
-            if(!isOwnPlanEntity(dev))continue;
+            if (!isOwnPlanEntity(dev) || dev.type === "trunkJunction") continue;
             if (!showDeactivatedDevices && dev.type === 'deactivated') continue;
 
             if (dev.type === 'textNode') {
@@ -761,7 +764,8 @@ container.addEventListener('pointerdown', (e) => {
         if (!foundHandle && !foundDevice && floor.showConnections) { foundCableId = hitTestCables(canvasX, canvasY, floor, showDeactivatedDevices); }
 
         const grabbingGroup = foundDevice && activeDeviceIds.size > 1 && activeDeviceIds.has(foundDevice.id);
-        if (foundHandle && !grabbingGroup) { draggedHandle = foundHandle; isDragging = true; }
+        const onDeviceCenter = foundDevice && Math.hypot(foundDevice.x - canvasX, foundDevice.y - canvasY) <= 11 * sMult;
+        if (foundHandle && !grabbingGroup && (selectedTool === "cableTool" || !onDeviceCenter)) { draggedHandle = foundHandle; isDragging = true; }
         else if (foundDevice) {
             draggedDevice = foundDevice;
             deviceGroupDrag = { grabX: foundDevice.x - canvasX, grabY: foundDevice.y - canvasY, canMove: !isClickingText || grabbingGroup };
@@ -888,7 +892,7 @@ window.addEventListener('pointerup', (e) => {
             if (!e.shiftKey) activeDeviceIds.clear(); 
             floor.devices.forEach(d => { 
                 if (!showDeactivatedDevices && d.type === 'deactivated') return;
-                if (isOwnPlanEntity(d) && d.x >= minX && d.x <= maxX && d.y >= minY && d.y <= maxY) { activeDeviceIds.add(d.id); }
+                if (isOwnPlanEntity(d) && d.type !== "trunkJunction" && d.x >= minX && d.x <= maxX && d.y >= minY && d.y <= maxY) { activeDeviceIds.add(d.id); }
             });
         } else {
             if (selectedTool !== 'cableTool' && selectedTool !== 'select') {
@@ -1064,24 +1068,28 @@ async function deleteSelectedDevices() {
     const uid = window.getFirebaseUser?.()?.uid;
     deviceDeletionPending = true;
     try {
+        let shift = true;
         if (devices.some(getDeviceNumberGroup)) {
-            const shift = await showAppDialog({
+            shift = await showAppDialog({
                 type: 'choice',
                 title: tr('Odstranit vybrané prvky?'),
                 message: tr('Ponechte mezeru v adresách, nebo posuňte další automaticky číslované prvky.'),
                 alternateLabel: tr('Odstranit a ponechat mezeru'),
                 primaryLabel: tr('Odstranit a přečíslovat')
             });
-            if (shift === null || floors !== projectFloors || floors[currentFloorIndex] !== floor
-                || !isSystemReady || window.getFirebaseUser?.()?.uid !== uid) return;
-            if (!shift) reserveDeletedAddresses(projectFloors, floor, deletedIds);
         }
-        floor.devices = floor.devices.filter(device => !deletedIds.has(device.id));
-        floor.cables = floor.cables.filter(cable => !deletedIds.has(cable.fromId) && !deletedIds.has(cable.toId));
-        activeDeviceIds.clear();
-        saveStateToHistory();
-        requestRedraw();
-        triggerAutoSave();
+        if (shift === null) return;
+        await window.withGoomBusy(() => {
+            if (floors !== projectFloors || floors[currentFloorIndex] !== floor || !isSystemReady
+                || window.getFirebaseUser?.()?.uid !== uid) return;
+            if (!shift) reserveDeletedAddresses(projectFloors, floor, deletedIds);
+            floor.devices = floor.devices.filter(device => !deletedIds.has(device.id));
+            floor.cables = floor.cables.filter(cable => !deletedIds.has(cable.fromId) && !deletedIds.has(cable.toId));
+            activeDeviceIds.clear();
+            saveStateToHistory();
+            requestRedraw();
+            triggerAutoSave();
+        });
     } finally {
         deviceDeletionPending = false;
         window.updateTabletTools?.();

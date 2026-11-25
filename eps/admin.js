@@ -228,6 +228,7 @@
         const reviews=view==='reviews';
         const capacity = view === 'capacity' && session?.role === 'owner';
         byId('adminCapacitySection').hidden = !capacity;
+        byId('adminProgramSection').hidden = capacity;
         byId('adminReviewsSection').hidden=!reviews;
         byId('adminPrograms').hidden = activity || feedback || reviews || capacity;
         byId('adminSummary').hidden = view !== 'overview';

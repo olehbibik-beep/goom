@@ -16,7 +16,7 @@
    if(!extension){await showAppAlert(words('XCX může být konfigurace SATEL DLOADX. Přímý import těchto dat zatím není podporován. Pro výkres použijte DXF nebo DWG.','XCX may contain a SATEL DLOADX configuration. Direct configuration import is not yet supported. Use DXF or DWG for drawings.','XCX kann eine SATEL-DLOADX-Konfiguration enthalten. Ein direkter Import wird noch nicht unterstützt. Für Pläne DXF oder DWG verwenden.','XCX может содержать конфигурацию SATEL DLOADX. Прямой импорт таких данных пока недоступен. Для чертежа используйте DXF или DWG.','XCX może zawierać konfigurację SATEL DLOADX. Bezpośredni import tych danych nie jest jeszcze obsługiwany. Do rysunków użyj DXF lub DWG.'));return false;}
    file=new File([file],file.name.replace(/\.xcx$/i,'.'+extension),{type:file.type});
   }
-  if(['tech','bips','cctv'].includes(extension))return importFileContent(file);
+  if(['tech','bips','cctv'].includes(extension))return window.withGoomBusy(() => importFileContent(file));
   if(['pdf','dxf','dwg','png','jpg','jpeg','webp','bmp','gif','svg'].includes(extension))return window.importGoomDrawing(file);
   await showAppAlert(words('Tento formát není podporován.','This file format is not supported.','Dieses Dateiformat wird nicht unterstützt.','Этот формат файла не поддерживается.','Ten format pliku nie jest obsługiwany.'));return false;
  };

@@ -74,25 +74,34 @@ async function saveCloudProject(userId) {
         return false;
     }
     const workspace = cloudWorkspace;
-    const firestore = await getCloudDatabase(userId);
-    const collection = getCloudProjectCollection(firestore, userId);
-    const limitError = () => Object.assign(new Error('Cloud project limit'), { code: 'goom/cloud-limit' });
-    if ((await readCloudRows(collection)).length >= cloudProjectLimit) throw limitError();
+    let name = null;
     if (!projectName || projectName === tr('Nový projekt')) {
-        const name = await showAppPrompt(tr('Введите название для сохранения в облаке:'), tr('Сохранить проект'));
+        name = await showAppPrompt(tr('Введите название для сохранения в облаке:'), tr('Сохранить проект'));
         if (!name || workspace !== cloudWorkspace || userId !== cloudUser?.uid) return false;
-        projectName = name;
-        document.getElementById('projectNameInput').value = name;
-        triggerAutoSave();
     }
     if (workspace !== cloudWorkspace || userId !== cloudUser?.uid) return false;
-    const payload = getProjectDataPayload();
-    if (new TextEncoder().encode(JSON.stringify(payload)).length > cloudProjectMaxBytes) {
-        throw Object.assign(new Error('Cloud project size'), { code: 'goom/cloud-size' });
-    }
-    const { id } = await callAccountFunction('goomCloudProjects', { action: 'save', application: APP_PRODUCT, payload }, userId);
-    if (workspace === cloudWorkspace && userId === cloudUser?.uid) cloudProjectId = id;
-    return true;
+    return window.withGoomBusy(async () => {
+        const firestore = await getCloudDatabase(userId);
+        const collection = getCloudProjectCollection(firestore, userId);
+        const limitError = () => Object.assign(new Error('Cloud project limit'), { code: 'goom/cloud-limit' });
+        if ((await readCloudRows(collection)).length >= cloudProjectLimit) throw limitError();
+        if (workspace !== cloudWorkspace || userId !== cloudUser?.uid) return false;
+        const payload = getProjectDataPayload();
+        if (name) payload.projectName = name;
+        if (new TextEncoder().encode(JSON.stringify(payload)).length > cloudProjectMaxBytes) {
+            throw Object.assign(new Error('Cloud project size'), { code: 'goom/cloud-size' });
+        }
+        const { id } = await callAccountFunction('goomCloudProjects', { action: 'save', application: APP_PRODUCT, payload }, userId);
+        if (workspace === cloudWorkspace && userId === cloudUser?.uid) {
+            cloudProjectId = id;
+            if (name) {
+                projectName = name;
+                document.getElementById('projectNameInput').value = name;
+                triggerAutoSave();
+            }
+        }
+        return true;
+    });
 }
 
 function renderCloudProjects() {
@@ -147,40 +156,44 @@ async function openCloudProject(userId, project) {
     if (project.id === cloudProjectId) return false;
     const workspace = cloudWorkspace;
     if (isSystemReady && !await showAppConfirm(tr`Открыть «${project.name || tr('Без названия')}»? Текущий проект будет заменён.`, tr('Открыть облачный проект'))) return false;
-    const canApply = () => workspace === cloudWorkspace && userId === cloudUser?.uid && window.hasCloudAccess?.();
-    let offset = 0, size, generation = null;
-    const chunks = [];
-    do {
+    return window.withGoomBusy(async () => {
+        const canApply = () => workspace === cloudWorkspace && userId === cloudUser?.uid && window.hasCloudAccess?.();
+        let offset = 0, size, generation = null;
+        const chunks = [];
+        do {
+            if (!canApply()) return false;
+            const chunk = await callAccountFunction('goomCloudProjects', { action: 'download', application: APP_PRODUCT,
+                id: project.id, offset, generation }, userId);
+            const bytes = Uint8Array.fromBase64 ? Uint8Array.fromBase64(chunk.data) : Uint8Array.from(atob(chunk.data), char => char.charCodeAt(0));
+            if (!bytes.length || offset + bytes.length > chunk.size || (size != null && chunk.size !== size)) {
+                throw new Error(tr('Не удалось загрузить файл проекта из Firebase Storage.'));
+            }
+            chunks.push(bytes);
+            offset += bytes.length;
+            size = chunk.size;
+            generation = chunk.generation;
+        } while (offset < size);
         if (!canApply()) return false;
-        const chunk = await callAccountFunction('goomCloudProjects', { action: 'download', application: APP_PRODUCT,
-            id: project.id, offset, generation }, userId);
-        const bytes = Uint8Array.fromBase64 ? Uint8Array.fromBase64(chunk.data) : Uint8Array.from(atob(chunk.data), char => char.charCodeAt(0));
-        if (!bytes.length || offset + bytes.length > chunk.size || (size != null && chunk.size !== size)) {
-            throw new Error(tr('Не удалось загрузить файл проекта из Firebase Storage.'));
-        }
-        chunks.push(bytes);
-        offset += bytes.length;
-        size = chunk.size;
-        generation = chunk.generation;
-    } while (offset < size);
-    if (!canApply()) return false;
-    const imported = await importFileContent(new File(chunks, `${project.name || 'project'}.TECH`, { type: 'application/json' }), {
-        canApply, source: 'cloud'
+        const imported = await importFileContent(new File(chunks, `${project.name || 'project'}.TECH`, { type: 'application/json' }), {
+            canApply, source: 'cloud'
+        });
+        if (!imported || userId !== cloudUser?.uid) return false;
+        cloudProjectId = project.id;
+        cloudProjectsModal.style.display = 'none';
+        setCloudSyncStatus(tr('Облачный проект открыт'), 'saved');
+        return true;
     });
-    if (!imported || userId !== cloudUser?.uid) return false;
-    cloudProjectId = project.id;
-    cloudProjectsModal.style.display = 'none';
-    setCloudSyncStatus(tr('Облачный проект открыт'), 'saved');
-    return true;
 }
 
 async function deleteCloudProject(userId, project) {
     if (window.isGoomReadOnly?.()) return false;
     if (!await showAppConfirm(tr`Удалить «${project.name || tr('Без названия')}» из облака?`, tr('Удалить проект'))) return false;
-    await callAccountFunction('goomCloudProjects', { action: 'delete', application: APP_PRODUCT, id: project.id }, userId);
-    if (cloudProjectId === project.id && userId === cloudUser?.uid) window.resetActiveCloudProject();
-    await refreshCloudProjects(userId);
-    return true;
+    return window.withGoomBusy(async () => {
+        await callAccountFunction('goomCloudProjects', { action: 'delete', application: APP_PRODUCT, id: project.id }, userId);
+        if (cloudProjectId === project.id && userId === cloudUser?.uid) window.resetActiveCloudProject();
+        await refreshCloudProjects(userId);
+        return true;
+    });
 }
 
 async function runCloudAction(action, operation, button) {
@@ -200,7 +213,7 @@ async function runCloudAction(action, operation, button) {
     const previous = { text: cloudSyncIndicator.textContent, state: cloudSyncIndicator.dataset.state };
     setCloudSyncStatus(progress, 'syncing');
     try {
-        const success = await operation(userId);
+        const success = await (action === 'list' ? window.withGoomBusy(() => operation(userId)) : operation(userId));
         if (userId !== cloudUser?.uid) return;
         if (['save','delete'].includes(action) && success) document.dispatchEvent(new Event('goom-cloud-projects-changed'));
         if (action === 'save' && success) {

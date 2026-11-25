@@ -83,3 +83,7 @@
 
 #deviceSelector { grid-template-columns: 44px 32px auto minmax(0, 1fr) auto 86px; }
 @media (max-width: 700px) { #deviceSelector { grid-template-columns: 44px 28px auto minmax(0, 1fr) auto 62px; } }
+
+body > .goom-busy-whale { z-index: 10009; background: #0c11163d; pointer-events: auto; }
+#cloudProjectsModal { justify-content: center; }
+#cloudProjectsModal .cloud-projects-content { flex: 0 1 auto; min-width: 0; width: min(620px, 100%); max-width: 100%; margin: auto; overflow-wrap: anywhere; }
