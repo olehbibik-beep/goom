@@ -26,6 +26,14 @@
   text.pl=window.GOOM_SITE_POLISH;
   for(const[lang,copy]of Object.entries({"cs":{"localLabel":"Pro domácí práci","projectDescription":"Profesionální nástroje Pro, vlastní nástroje, Cloud a čisté výstupy ve všech čtyřech editorech.","pro2":"Profesionální sada Pro i vlastní nástroje","projectCta":"Pro","companyCta":"Team","companyDescription":"Pro pro menší tým, spravovaný z firemního účtu.","company1":"Vše z Pro","company2":"Až 3 další přístupy Pro"},"en":{"localLabel":"For home projects","projectDescription":"Professional Pro tools, your own tools, Cloud and clean output in all four editors.","pro2":"Professional Pro tool set and your own tools","projectCta":"Pro","companyCta":"Team","companyDescription":"Pro for a small team, managed through a company account.","company1":"Everything in Pro","company2":"Up to 3 extra Pro accounts"},"de":{"localLabel":"Für Projekte zu Hause","projectDescription":"Professionelle Pro-Werkzeuge, eigene Werkzeuge, Cloud und saubere Ausgaben in allen vier Editoren.","pro2":"Professionelles Pro-Werkzeugset und eigene Werkzeuge","projectCta":"Pro","companyCta":"Team","companyDescription":"Pro für kleine Teams, verwaltet über ein Firmenkonto.","company1":"Alles aus Pro","company2":"Bis zu 3 weitere Pro-Zugänge"},"ru":{"localLabel":"Для домашней работы","projectDescription":"Профессиональные инструменты Pro, свои инструменты, Cloud и чистые результаты во всех четырёх программах.","pro2":"Профессиональный набор Pro и свои инструменты","projectCta":"Pro","companyCta":"Team","companyDescription":"Pro для небольшой команды с управлением через аккаунт компании.","company1":"Всё из Pro","company2":"До 3 дополнительных аккаунтов Pro"},"pl":{"localLabel":"Do pracy w domu","projectDescription":"Profesjonalne narzędzia Pro, własne narzędzia, Cloud i czyste wydruki we wszystkich czterech edytorach.","pro2":"Profesjonalny zestaw Pro i własne narzędzia","projectCta":"Pro","companyCta":"Team","companyDescription":"Pro dla małego zespołu zarządzanego z konta firmowego.","company1":"Wszystko z Pro","company2":"Do 3 dodatkowych kont Pro"}}))Object.assign(text[lang],copy);
   for(const[lang,label]of Object.entries({cs:'Cloud: až 5 projektů v každém editoru',en:'Cloud: up to 5 projects in each editor',de:'Cloud: bis zu 5 Projekte je Editor',ru:'Cloud: до 5 проектов в каждой программе',pl:'Cloud: do 5 projektów w każdym edytorze'}))text[lang].pro1=label;
+  const formats = {
+    cs: ['Příručka', 'Importujte DWG, DXF, PDF a obrázky. Vektorový výkres můžete vyexportovat do DXF nebo SVG. Fotografický podklad zůstává rastrový.', 'CAD import'],
+    en: ['Guide', 'Import DWG, DXF, PDF and images. Export vector drawings as DXF or SVG. Image backgrounds remain raster.', 'CAD import'],
+    de: ['Handbuch', 'DWG, DXF, PDF und Bilder importieren. Vektorzeichnungen als DXF oder SVG exportieren. Bildunterlagen bleiben Rasterbilder.', 'CAD-Import'],
+    ru: ['Справочник', 'Импортируйте DWG, DXF, PDF и изображения. Векторный чертёж можно экспортировать в DXF или SVG. Подложка из изображения остаётся растровой.', 'Импорт CAD'],
+    pl: ['Instrukcja', 'Importuj DWG, DXF, PDF i obrazy. Eksportuj rysunki wektorowe jako DXF lub SVG. Podkład obrazu pozostaje rastrowy.', 'Import CAD']
+  };
+  for (const [lang, [navGuide, vectorText, importExport]] of Object.entries(formats)) Object.assign(text[lang], { navGuide, vectorText, importExport });
   let language='cs',period='monthly',preview='pzts',pricingProgram='pzts';
   try{const candidate=new URLSearchParams(location.search).get('lang')||localStorage.getItem('goom.site.language');if(text[candidate])language=candidate;}catch{}
   const tr=key=>text[language][key]||text.cs[key]||key;
@@ -53,6 +61,7 @@
   }
   function render(){
     document.documentElement.lang=language;document.title=tr('pageTitle');document.getElementById('language').value=language;
+    document.querySelectorAll('[data-guide-link]').forEach(link => { link.href = language === 'ru' ? '/guide/ru/' : '/guide/'; });
     document.querySelectorAll('[data-i18n]').forEach(el=>el.textContent=tr(el.dataset.i18n));renderPreview();renderPrices();renderProgram();
   }
   document.getElementById('language').addEventListener('change',event=>{language=text[event.target.value]?event.target.value:'cs';try{localStorage.setItem('goom.site.language',language);}catch{}render();});
