@@ -355,6 +355,9 @@ function closeTextModal() {
 }
 
 let deviceRotationAnimation = null;
+const deviceRotationStopStep = 45;
+const deviceRotationStopPause = 450;
+const normalizeDeviceAngle = angle => (angle % 360 + 360) % 360;
 
 function stopDeviceRotation() {
     const rotation = deviceRotationAnimation;
@@ -372,46 +375,55 @@ function startDeviceRotation(direction=1,initialStep=0) {
     if (!floor) return;
     const devices = Array.from(activeDeviceIds)
         .map(id => floor.devices.find(device => device.id === id))
-        .filter(device=>device&&isOwnPlanEntity(device))
-        .map(device => ({ device, start: device.rotation || 0 }));
+        .filter(device => device && isOwnPlanEntity(device));
     if (devices.length === 0) return;
 
-    direction=direction<0?-1:1;
-    if(initialStep)devices.forEach(({device})=>device.rotation=(((device.rotation||0)+direction*initialStep)%360+360)%360);
-    const normalizedAngle = (((devices[0].device.rotation||0) % 90) + 90) % 90;
-    deviceRotationAnimation = {
-        devices, direction,
-        lastFrame: performance.now(),
-        angleToStop: normalizedAngle < 0.001 ? 90 : direction>0?90-normalizedAngle:normalizedAngle,
-        pauseUntil: 0,
-        rotated: initialStep
+    direction = direction < 0 ? -1 : 1;
+    const startAngle = normalizeDeviceAngle(devices[0].rotation || 0);
+    const offsetFromStop = startAngle % deviceRotationStopStep;
+    const angleToStop = (direction > 0 ? deviceRotationStopStep - offsetFromStop : offsetFromStop) || deviceRotationStopStep;
+    const stopAngle = normalizeDeviceAngle(Math.round((startAngle + direction * angleToStop) / deviceRotationStopStep) * deviceRotationStopStep);
+    const now = performance.now();
+    const firstStep = Math.min(initialStep, angleToStop);
+    const animation = {
+        direction, stopAngle,
+        lastFrame: now,
+        angleToStop: angleToStop - firstStep,
+        pauseUntil: firstStep === angleToStop ? now + deviceRotationStopPause : 0,
+        rotated: firstStep
     };
-    const ownAnimation=deviceRotationAnimation;
-    if(initialStep)requestRedraw();
+    const rotateDevices = step => {
+        for (const device of devices) {
+            device.rotation = normalizeDeviceAngle((device.rotation || 0) + direction * step);
+        }
+        if (animation.angleToStop === 0) devices[0].rotation = animation.stopAngle;
+    };
+    deviceRotationAnimation = animation;
+    if (firstStep) {
+        rotateDevices(firstStep);
+        requestRedraw();
+    }
 
     const rotateFrame = (now) => {
-        const animation = deviceRotationAnimation;
-        if (animation!==ownAnimation) return;
+        if (deviceRotationAnimation !== animation) return;
         if(!isSystemReady||isOverviewMode||document.querySelector('.modal[data-modal-open="true"],.app-dialog-backdrop:not([hidden])')){stopDeviceRotation();return;}
         if (animation.pauseUntil && now < animation.pauseUntil) {
             animation.lastFrame = now;
         } else {
             if (animation.pauseUntil) {
                 animation.pauseUntil = 0;
-                animation.angleToStop = 90;
+                animation.angleToStop = deviceRotationStopStep;
+                animation.stopAngle = normalizeDeviceAngle(animation.stopAngle + direction * deviceRotationStopStep);
                 animation.lastFrame = now;
             } else {
-                const elapsed = Math.min(now - animation.lastFrame, 50);
+                const elapsed = Math.max(0, Math.min(now - animation.lastFrame, 50));
                 animation.lastFrame = now;
                 const step = Math.min(180 * elapsed / 1000, animation.angleToStop);
-                animation.devices.forEach(({ device }) => {
-                    device.rotation = (((device.rotation || 0) + animation.direction*step)%360+360)%360;
-                });
                 animation.rotated += step;
                 animation.angleToStop -= step;
-                if (animation.angleToStop < 0.001) {
-                    animation.angleToStop = 0;
-                    animation.pauseUntil = now + 450;
+                rotateDevices(step);
+                if (animation.angleToStop === 0) {
+                    animation.pauseUntil = now + deviceRotationStopPause;
                 }
             }
         }
@@ -457,7 +469,6 @@ function placePlanDevice(floor, device) {
     const previous = firstId ? floor.devices.find(item => item.id === firstId) : null;
     device.ownerApplication=APP_PRODUCT;
     floor.devices.push(device);
-    if (!device.plainText) includeNewDeviceInLegend(floor, device.type, device.cadSymbol === true);
     if (previous && !previous.plainText && !device.plainText) {
         const cable = { id: genId(), fromId: previous.id, toId: device.id, isCustom: false };
         recalcCableHandles(cable, previous, device);
@@ -551,7 +562,6 @@ window.addEventListener('keydown', (e) => {
                 const newId = genId();
                 const pastedDev = { ...d, id: newId, x: lastMouseX + (d.x - centerX), y: lastMouseY + (d.y - centerY), h1x: 0, h1y: 0, h2x: 0, h2y: 0, h3x: 0, h3y: 0, hasCustomRoute: false };
                 floor.devices.push(pastedDev); activeDeviceIds.add(newId);
-                includeNewDeviceInLegend(floor, pastedDev.type, pastedDev.cadSymbol === true);
             });
             saveStateToHistory(); requestRedraw(); triggerAutoSave();
         }
@@ -1498,7 +1508,6 @@ if (btnSaveNumber) {
                 const type = document.getElementById('editCameraType').value;
                 if (type !== editingDevice.type && Object.hasOwn(CCTV_CAMERAS, type)) {
                     editingDevice.type = type;
-                    includeNewDeviceInLegend(floors[currentFloorIndex], type);
                 }
                 Object.assign(editingDevice, readCameraFields('editCamera'));
                 editingDevice.cameraAngle = angle.valueAsNumber;

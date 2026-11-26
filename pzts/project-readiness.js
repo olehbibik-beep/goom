@@ -15,7 +15,15 @@
         const activeFloors=list.filter(f=>(f.devices||[]).some(meaningful)||(f.cables||[]).length||f.image||f.imgData||f.vectorPlan||f.pdfSource||f.rasterSource);
         const sourced=activeFloors.filter(f=>f.image||f.imgData||f.vectorPlan||f.pdfSource||f.rasterSource).length;
         const labels=all.filter(d=>String(d.manualName||'').trim()).length;
-        let legendTypes=0,neededTypes=0;for(const floor of activeFloors){const types=new Set((floor.devices||[]).filter(meaningful).map(d=>d.type));const included=new Set(floor.legend?.visible!==false?(floor.legend?.entries||[]).map(e=>e.type):[]);neededTypes+=types.size;legendTypes+=[...types].filter(type=>included.has(type)).length;}
+        let legendTypes = 0, neededTypes = 0;
+        for (const floor of activeFloors) {
+            const types = new Set((floor.devices || []).filter(d => meaningful(d) && d.type !== 'trunkJunction').map(d => d.type));
+            const rows = floor.legend && floor.legend.visible !== false ? getProjectLegendEntries(floor) : [];
+            const foreignRows = (floor.foreignLegends || []).flatMap(legend => getForeignLegendEntries(floor, legend));
+            const included = new Set([...rows, ...foreignRows].map(entry => entry.type));
+            neededTypes += types.size;
+            legendTypes += [...types].filter(type => included.has(type)).length;
+        }
         const checks=[
             {id:'name',complete:!!String(project.name||'').trim(),weight:5,detail:''},
             {id:'drawing',complete:activeFloors.length>0&&sourced===activeFloors.length,weight:15,detail:`${sourced}/${activeFloors.length}`},

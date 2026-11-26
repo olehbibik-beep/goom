@@ -73,5 +73,38 @@ function drawForeignPlanDevice(context,device){
     if(device.manualName){context.fillStyle=symbol?.color||'#8b9caa';context.font='11px sans-serif';context.fillText(device.manualName,device.x+19,device.y+(number?43:24));}context.restore();
 }
 
-function sanitizeForeignLegends(legends){return Array.isArray(legends)?legends.slice(0,8).filter(l=>l&&GOOM_APPLICATIONS.has(l.ownerApplication)&&Number.isFinite(l.x)&&Number.isFinite(l.y)&&Array.isArray(l.entries)).map(l=>({...l,entries:l.entries.slice(0,50).filter(e=>e&&typeof e.type==='string'&&typeof e.label==='string').map(e=>({...e,label:e.label.slice(0,160)}))})):[];}
-function drawForeignLegends(context,floor){for(const legend of floor.foreignLegends||[]){if(legend.visible===false)continue;context.save();context.translate(legend.x,legend.y);const size=Math.max(.01,Math.min(100,Number(legend.scale)||1));context.scale(size,size);context.fillStyle='#7e909b';context.font='bold 13px sans-serif';context.fillText(legend.ownerApplication,0,12);context.font='12px sans-serif';legend.entries.forEach((entry,index)=>context.fillText('— '+entry.label,0,38+index*24));context.restore();}}
+function sanitizeForeignLegends(legends){return Array.isArray(legends)?legends.slice(0,8).filter(l=>l&&GOOM_APPLICATIONS.has(l.ownerApplication)&&Number.isFinite(l.x)&&Number.isFinite(l.y)&&Array.isArray(l.entries)).map(l=>({...l,entries:l.entries.slice(0,100).filter(e=>e&&typeof e.type==='string'&&typeof e.label==='string').map(e=>({...e,label:e.label.slice(0,160)}))})):[];}
+const floorLegendSymbolKey = ({type, cadSymbol}) => cadSymbol === true ? 'cad:' + type : type;
+function floorLegendSymbols(floor, application) {
+    const symbols = new Map();
+    for (const device of floor.devices || []) {
+        if ((device.ownerApplication || APP_PRODUCT) !== application
+            || ['textNode', 'deactivated', 'trunkJunction'].includes(device.type)) continue;
+        symbols.set(floorLegendSymbolKey(device), device);
+    }
+    if (floor.cables?.some(cable => cable.kind === 'trunk' && (cable.ownerApplication || APP_PRODUCT) === application)) {
+        symbols.set('trunkTool', {type:'trunkTool'});
+    }
+    return symbols;
+}
+function getForeignLegendEntries(floor, legend) {
+    if (legend.visible === false) return [];
+    const symbols = floorLegendSymbols(floor, legend.ownerApplication);
+    return legend.entries.filter(entry => symbols.delete(floorLegendSymbolKey(entry)));
+}
+function drawForeignLegends(context, floor) {
+    for (const legend of floor.foreignLegends || []) {
+        const entries = getForeignLegendEntries(floor, legend);
+        if (!entries.length) continue;
+        const size = Math.max(.01, Math.min(100, Number(legend.scale) || 1));
+        context.save();
+        context.translate(legend.x, legend.y);
+        context.scale(size, size);
+        context.fillStyle = '#7e909b';
+        context.font = 'bold 13px sans-serif';
+        context.fillText(legend.ownerApplication, 0, 12);
+        context.font = '12px sans-serif';
+        entries.forEach((entry, index) => context.fillText('— ' + entry.label, 0, 38 + index * 24));
+        context.restore();
+    }
+}

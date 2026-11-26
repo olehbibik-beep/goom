@@ -2,8 +2,9 @@ let planExportBusy = false;
 const planPrintURLs = [];
 async function printPlanDirect(){
     if(!isSystemReady||planExportBusy)return;
-    const printFloors = floors.filter(floor => floor.image || floor.legend?.visible && floor.legend.entries?.length
-        || floor.devices.some(device => showDeactivatedDevices || device.type !== 'deactivated'));
+    const printFloors = floors.filter(floor => floor.image
+        || floor.devices.some(device => showDeactivatedDevices || device.type !== 'deactivated')
+        || getProjectLegendBounds(floor));
     if (!printFloors.length) {
         showAppAlert(tr('Projekt neobsahuje žádné podlaží k tisku.'), tr('Ошибка печати'));
         return;

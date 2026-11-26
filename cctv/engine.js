@@ -191,8 +191,16 @@ function getProjectBounds(floor, showDeac) {
         minX=Math.min(minX,legendBounds.minX); minY=Math.min(minY,legendBounds.minY);
         maxX=Math.max(maxX,legendBounds.minX+legendBounds.width); maxY=Math.max(maxY,legendBounds.minY+legendBounds.height);
     }
-    for(const legend of floor.foreignLegends||[]){const factor=Math.max(.01,Math.min(100,Number(legend.scale)||1)),w=Math.max(200,...legend.entries.map(e=>String(e.label||'').length*8))*factor,h=(38+legend.entries.length*24)*factor;minX=Math.min(minX,legend.x);minY=Math.min(minY,legend.y);maxX=Math.max(maxX,legend.x+w);maxY=Math.max(maxY,legend.y+h);}
-    if (floor.devices.length === 0 && !floor.image && !legendBounds && !(floor.foreignLegends||[]).length) return { minX: 0, minY: 0, width: 1920, height: 1080 };
+    for (const legend of floor.foreignLegends || []) {
+        const entries = getForeignLegendEntries(floor, legend);
+        if (!entries.length) continue;
+        const factor = Math.max(.01, Math.min(100, Number(legend.scale) || 1));
+        const width = Math.max(200, ...entries.map(entry => entry.label.length * 8)) * factor;
+        const height = (38 + entries.length * 24) * factor;
+        minX = Math.min(minX, legend.x); minY = Math.min(minY, legend.y);
+        maxX = Math.max(maxX, legend.x + width); maxY = Math.max(maxY, legend.y + height);
+    }
+    if (!floor.devices.length && minX === Infinity) return { minX: 0, minY: 0, width: 1920, height: 1080 };
 
     floor.devices.forEach(d => {
         if (!showDeac && d.type === 'deactivated') return;

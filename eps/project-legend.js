@@ -14,7 +14,7 @@ function sanitizeProjectLegend(value) {
         visible: value.visible !== false,
         x: finite(value.x, 0, -1e7, 1e7), y: finite(value.y, 0, -1e7, 1e7),
         scale: finite(value.scale, 1, .01, 1000),
-        entries: value.entries.slice(0, 50).filter(entry => entry && legendDeviceTypes.has(entry.type)).map(entry => ({
+        entries: value.entries.slice(0, 100).filter(entry => entry && legendDeviceTypes.has(entry.type)).map(entry => ({
             type: entry.type, ...(entry.cadSymbol === true ? {cadSymbol: true} : {}), label: typeof entry.label === 'string' ? entry.label.slice(0, 160) : entry.type,
             // Keep the snapshot even during early startup, before the icon editor has loaded.
             shapes: Array.isArray(entry.shapes) ? entry.shapes.slice(0, 100).filter(s => s && typeof s === 'object').map(s => ({
@@ -29,68 +29,81 @@ function sanitizeProjectLegend(value) {
         }))
     };
 }
-function projectLegendEntries(menu = getActiveToolbarMenu(), icons = customDeviceIcons) {
-    return [...new Set(menu.deviceTypes)].filter(type => legendDeviceTypes.has(type)).map(type => ({
-        type, label: toolbarMenuTypes.find(item => item.type === type)?.title || type,
-        ...(isDrawingToolbarMenu(menu) && Object.hasOwn(cadCatalog[APP_PRODUCT], type) ? {cadSymbol:true, shapes:[]} : {shapes:sanitizeIconShapes(icons[type])})
-    }));
-}
-function includeNewDeviceInLegend(floor, type, cadSymbol = false) {
+function makeProjectLegendEntry(symbol, icons = customDeviceIcons) {
+    const {type, cadSymbol} = symbol;
     if (cadSymbol) {
-        const entries = floor.legend?.entries;
-        if (entries && !entries.some(entry => entry.type === type && entry.cadSymbol)) {
-            floor.legend.entries = [...entries, {type, cadSymbol: true, label: deviceBriefName({type}) + " · CAD", shapes: []}];
-        }
-        return;
+        const name = typeof deviceBriefName === 'function' ? deviceBriefName(symbol) : type;
+        return {type, cadSymbol: true, label: name + ' · CAD', shapes: []};
     }
-    if (!(NEW_TOOLBAR_DEVICE_TYPES.includes(type) || ['floorPassage','trunkTool'].includes(type)) || !floor.legend || floor.legend.entries.some(entry => entry.type === type)) return;
-    const entry = projectLegendEntries().find(item => item.type === type);
-    if (entry) floor.legend.entries = [...floor.legend.entries, entry];
+    const label = typeof toolbarMenuTypes === 'undefined' ? null : toolbarMenuTypes.find(item => item.type === type)?.title;
+    const shapes = typeof sanitizeIconShapes === 'function' ? sanitizeIconShapes(icons[type]) : [];
+    return {type, label: label || (typeof deviceBriefName === 'function' ? deviceBriefName(symbol) : type), shapes};
+}
+function getProjectLegendEntries(floor, symbols = floorLegendSymbols(floor, APP_PRODUCT)) {
+    const entries = [];
+    const seen = new Set();
+    for (const entry of floor.legend.entries) {
+        const key = floorLegendSymbolKey(entry);
+        if (symbols.has(key) && !seen.has(key)) {
+            entries.push(entry);
+            seen.add(key);
+        }
+    }
+    for (const [key, symbol] of symbols) {
+        if (!seen.has(key) && legendDeviceTypes.has(symbol.type)) entries.push(makeProjectLegendEntry(symbol));
+    }
+    return entries;
 }
 function updateProjectLegendsFromMenu(menu) {
-    const legends = floors.map(floor => floor.legend).filter(Boolean);
-    if (!legends.length) return;
-    const entries = projectLegendEntries(menu, menu.icons || {});
-    const signature = JSON.stringify(entries);
-    const changed = legends.filter(legend => JSON.stringify(legend.entries) !== signature);
-    if (!changed.length) return;
-    for (const floor of floors) if (changed.includes(floor.legend)) {
+    let changed = false;
+    for (const floor of floors) {
+        if (!floor.legend) continue;
+        const entries = getProjectLegendEntries(floor).map(entry => makeProjectLegendEntry(entry, menu.icons || {}));
+        if (JSON.stringify(floor.legend.entries) === JSON.stringify(entries)) continue;
         floor.legend.entries = entries;
-        for (const device of floor.devices) if (device.cadSymbol && isOwnPlanEntity(device)) includeNewDeviceInLegend(floor, device.type, true);
+        changed = true;
     }
-    if (!entries.length) selectedProjectLegend = null;
+    if (!changed) return;
     requestRedraw();
     if (isSystemReady) triggerAutoSave();
 }
-function projectLegendLayout(legend) {
+function projectLegendLayout(floor) {
+    const legend = floor.legend;
     const language = getGoomLanguage();
     const iconsReady = typeof sanitizeIconShapes === 'function';
+    const toolbarReady = typeof toolbarMenuTypes !== 'undefined';
+    const symbols = floorLegendSymbols(floor, APP_PRODUCT);
+    const symbolKeys = JSON.stringify([...symbols.keys()]);
     const cached = projectLegendLayouts.get(legend);
-    if (cached?.language === language && cached.entries === legend.entries && cached.iconsReady === iconsReady) return cached;
+    if (cached?.language === language && cached.snapshot === legend.entries && cached.symbolKeys === symbolKeys
+        && cached.iconsReady === iconsReady && cached.toolbarReady === toolbarReady && cached.icons === customDeviceIcons) return cached;
+    const entries = getProjectLegendEntries(floor, symbols);
     ctx.save(); ctx.font = '13px sans-serif';
-    const labels = legend.entries.map(entry => `— ${tr(entry.label)}`);
+    const labels = entries.map(entry => `— ${tr(entry.label)}`);
     const width = Math.max(170, ...labels.map(label => 56 + ctx.measureText(label).width));
     ctx.restore();
-    const shapes = legend.entries.map(entry => iconsReady ? sanitizeIconShapes(entry.shapes) : []);
-    const layout = {language, iconsReady, entries:legend.entries, labels, shapes, width, height:34 + legend.entries.length * 28};
+    const shapes = entries.map(entry => iconsReady ? sanitizeIconShapes(entry.shapes) : []);
+    const layout = {language, iconsReady, toolbarReady, icons:customDeviceIcons, snapshot:legend.entries, symbolKeys, entries, labels, shapes, width, height:34 + entries.length * 28};
     projectLegendLayouts.set(legend, layout);
     return layout;
 }
-function getProjectLegendBounds(floor) {
+function getProjectLegendBounds(floor, layout) {
     const legend = floor?.legend;
-    if (!legend?.visible || !legend.entries.length) return null;
-    const layout = projectLegendLayout(legend);
+    if (!legend?.visible) return null;
+    layout ??= projectLegendLayout(floor);
+    if (!layout.entries.length) return null;
     return {minX:legend.x, minY:legend.y, width:layout.width * legend.scale, height:layout.height * legend.scale};
 }
 function drawProjectLegend(target, floor, editing, theme) {
-    const legend = floor.legend, bounds = getProjectLegendBounds(floor);
+    const legend = floor.legend;
+    if (!legend?.visible) return;
+    const layout = projectLegendLayout(floor), bounds = getProjectLegendBounds(floor, layout);
     if (!bounds) return;
-    const layout = projectLegendLayout(legend);
     target.save(); target.translate(legend.x, legend.y); target.scale(legend.scale, legend.scale);
     target.textAlign = 'left'; target.textBaseline = 'middle';
     target.fillStyle = theme === 'dark' ? '#f4f4f5' : '#171719'; target.font = '16px sans-serif';
     target.fillText(tr('Legenda:'), 0, 12);
-    legend.entries.forEach((entry, index) => {
+    layout.entries.forEach((entry, index) => {
         const y = 46 + index * 28;
         target.save(); target.translate(20, y);
         const shapes = layout.shapes[index];
@@ -133,7 +146,7 @@ function moveProjectLegend(event, x, y) {
     if (floors[currentFloorIndex]?.legend !== drag.legend) { finishProjectLegendDrag(); return true; }
     if (drag.mode === 'move') { drag.legend.x = drag.startX + x-drag.x; drag.legend.y = drag.startY + y-drag.y; }
     else {
-        const layout = projectLegendLayout(drag.legend), w = layout.width, h = layout.height;
+        const layout = projectLegendLayout(floors[currentFloorIndex]), w = layout.width, h = layout.height;
         const dx = x-drag.x, dy = y-drag.y;
         drag.legend.scale = Math.max(.01, Math.min(1000, drag.startScale + (dx*w+dy*h)/(w*w+h*h)));
     }
@@ -159,18 +172,16 @@ function toggleProjectLegend() {
     finishProjectLegendDrag();
     if (floor.legend) floor.legend.visible = !floor.legend.visible;
     else {
-        const legend = {visible:true,x:0,y:0,scale:1,entries:projectLegendEntries()};
-        const legendFloor = {legend};
-        for (const device of floor.devices) if (device.cadSymbol && isOwnPlanEntity(device)) includeNewDeviceInLegend(legendFloor, device.type, true);
-        if (!legend.entries.length) return;
-        const layout = projectLegendLayout(legend), width = planCanvasWidth(), height = planCanvasHeight();
+        const legend = {visible:true,x:0,y:0,scale:1,entries:[]};
+        floor.legend = legend;
+        legend.entries = getProjectLegendEntries(floor);
+        const layout = projectLegendLayout(floor), width = planCanvasWidth(), height = planCanvasHeight();
         const displayScale = Math.min(1, width*.38/layout.width, height*.65/layout.height);
         legend.scale = Math.max(.01, Math.min(1000, displayScale / scale));
         legend.x = (width - 28 - layout.width*legend.scale*scale - offsetX)/scale;
         legend.y = (28-offsetY)/scale;
-        floor.legend = legend;
     }
-    selectedProjectLegend = floor.legend.visible ? floor.legend : null;
+    selectedProjectLegend = getProjectLegendBounds(floor) ? floor.legend : null;
     activeDeviceIds.clear(); resetPlacementTool();
     saveStateToHistory(); triggerAutoSave(); requestRedraw(); updateProjectLegendButton();
 }
@@ -188,6 +199,7 @@ window.addEventListener('goom-language-changed', () => {updateProjectLegendButto
 window.addEventListener('keydown', event => {
     const legend = floors[currentFloorIndex]?.legend;
     if (!legend?.visible || selectedProjectLegend !== legend || isOverviewMode ||
+        !getProjectLegendBounds(floors[currentFloorIndex]) ||
         event.target.closest?.('input,textarea,select,[contenteditable="true"]') ||
         [...document.querySelectorAll('.modal')].some(modal => getComputedStyle(modal).display !== 'none')) return;
     const key = event.key;
