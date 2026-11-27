@@ -22,9 +22,12 @@ function cableRouteColor(from,to) {
     if(types.every(type=>modules.includes(type)))return '#38bdf8';
     return '#22c55e';
 }
-function drawCableRoute(ctx, cable, from, to, color, lineWidth, paintParts) {
+function drawCableRoute(ctx, cable, from, to, color, lineWidth) {
     const points = getCableRoute(cable, from, to);
-    ctx.lineCap=cable.kind==='trunk'?'round':'butt';drawCableWithJumps(ctx,points,paintParts);
+    ctx.lineCap = cable.kind === 'trunk' ? 'round' : 'butt';
+    ctx.beginPath();
+    ctx.moveTo(points[0].x, points[0].y);
+    for (const point of points.slice(1)) ctx.lineTo(point.x, point.y);
     ctx.strokeStyle = color; ctx.lineWidth = lineWidth; ctx.stroke();
 }
 
@@ -59,13 +62,14 @@ function createWallMask(floor, threshold = floor.wallThreshold) {
 const pirCoverageCache = new WeakMap();
 
 function getPIRCoveragePoints(floor, device) {
-    const mask = floor.wallMask;
+    const geometry = getPlanWallGeometry(floor);
+    const mask = geometry?.complete && geometry.index ? null : floor.wallMask;
     const optics = getCameraOptics(device);
     const rangePixels = (optics?.range ?? 300)*(Number(document.getElementById('deviceSizeSlider').value)||16)/16;
     const fovDegrees = optics?.angle ?? 90;
 
     const cached = pirCoverageCache.get(device);
-    if (cached && cached.mask === mask && cached.x === device.x && cached.y === device.y &&
+    if (cached && cached.mask === mask && cached.geometry === geometry && cached.x === device.x && cached.y === device.y &&
         cached.rotation === device.rotation && cached.range === rangePixels && cached.fov === fovDegrees) {
         return cached.points;
     }
@@ -74,7 +78,6 @@ function getPIRCoveragePoints(floor, device) {
     const maskScaleY = mask ? mask.height / mask.imageHeight : 1;
     const originX = device.x * maskScaleX;
     const originY = device.y * maskScaleY;
-    const range = rangePixels * maskScaleX;
     const fov = fovDegrees * Math.PI / 180;
     const centerAngle = ((device.rotation || 0) + (optics || device.type === 'glassbreak' ? 0 : 180)) * Math.PI / 180;
     const rayCount = Math.min(720, Math.max(90, Math.ceil(fovDegrees * rangePixels / 180)));
@@ -84,17 +87,19 @@ function getPIRCoveragePoints(floor, device) {
         const angle = centerAngle - fov / 2 + fov * ray / rayCount;
         const dx = Math.cos(angle);
         const dy = Math.sin(angle);
+        const wallDistance = tracePlanWall(geometry?.index, device.x, device.y, dx, dy, rangePixels);
         if (!mask) {
-            points.push({ x: device.x + dx * rangePixels, y: device.y + dy * rangePixels });
+            points.push({x: device.x+dx*wallDistance, y:device.y+dy*wallDistance});
             continue;
         }
         let distance = 0;
         let lastX = originX;
         let lastY = originY;
 
-        for (distance = 1; distance <= range; distance += 1) {
-            const x = originX + dx * distance;
-            const y = originY + dy * distance;
+        const pixelStep = 1 / Math.max(maskScaleX,maskScaleY);
+        for (distance = pixelStep; distance <= wallDistance; distance += pixelStep) {
+            const x = originX + dx * distance * maskScaleX;
+            const y = originY + dy * distance * maskScaleY;
             if (x >= 0 && y >= 0 && x < mask.width && y < mask.height) {
                 const pixelIndex = Math.floor(y) * mask.width + Math.floor(x);
                 if (distance > 3 && mask.data[pixelIndex]) break;
@@ -107,7 +112,7 @@ function getPIRCoveragePoints(floor, device) {
     }
 
     const entry = {
-        mask, x: device.x, y: device.y, rotation: device.rotation,
+        mask, geometry, x: device.x, y: device.y, rotation: device.rotation,
         range: rangePixels, fov: fovDegrees, points
     };
     pirCoverageCache.set(device, entry);
@@ -264,6 +269,12 @@ function drawDevice(ctx, dev, skipSelection = false, theme = 'dark', options = {
     if ((selected || hovered) && !isExporting && !skipSelection) {
         ctx.save();
         ctx.translate(dev.x, dev.y);
+        if (hovered) {
+            ctx.beginPath();
+            ctx.arc(0, 0, size + 7 * sMult, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+        }
         if (selected) {
             ctx.strokeStyle = theme === 'dark' ? 'rgba(255,255,255,.8)' : '#52525b';
             ctx.rotate(planReducedMotion.matches ? 0 : globalTime * .16);
@@ -274,11 +285,6 @@ function drawDevice(ctx, dev, skipSelection = false, theme = 'dark', options = {
                 ctx.arc(0, 0, size + 13 * sMult, start, start + Math.PI * .38);
                 ctx.stroke();
             }
-        } else {
-            ctx.beginPath();
-            ctx.arc(0, 0, size + 7 * sMult, 0, Math.PI * 2);
-            ctx.fillStyle = '#ffffff';
-            ctx.fill();
         }
         ctx.restore();
     }
@@ -433,12 +439,13 @@ function drawFloorData(ctx, floor, skipSelection = false, theme = getPlanTheme(f
                 const color=c.kind==='trunk'?trunkStyle.color:(!isOwnPlanEntity(c)&&c.routeColor)||cableRouteColor(d1,d2);
                 const routeWidth=c.kind==='trunk'?trunkStyle.width:4;
                 const lineWidth=isExporting||skipSelection?routeWidth:Math.max(routeWidth,2/Math.max(.01,scale));
-                drawCableRoute(ctx, c, d1, d2, color, lineWidth,cablePaint.get(c.id));
+                drawCableRoute(ctx, c, d1, d2, color, lineWidth);
                 if (isOwnPlanEntity(c) && c.kind!=='trunk' && !isExporting && !skipSelection && (selectedTool === 'cableTool' || activeDeviceIds.has(d1.id) || activeDeviceIds.has(d2.id) || (draggedHandle && draggedHandle.cable === c))) {
                     drawHandles(ctx, c, color);
                 }
             }
         });
+        drawCableCrossings(ctx, cablePaint.dots);
     }
     floor.devices.forEach(dev => {
         if (!showDeactivatedDevices && dev.type === 'deactivated') return;

@@ -1,6 +1,6 @@
 (() => {
     // Change this version whenever publishing application files together.
-    const version = "20261126-rotation-legend-16";
+    const version = "20261127-plan-layout-17";
     let started = false;
     let pdfLoading = null;
     let pdfAttempt = 0;
@@ -55,7 +55,7 @@
                 ] : [])
             ].map(promise => promise.catch(error => console.warn('Библиотека импорта/экспорта недоступна:', error)));
             window.planLibrariesReady = Promise.all(libraries);
-            for (const name of ['modal-ui', 'busy-ui', 'eps-catalog', 'config', 'editor-polish', 'eps-runtime', 'map-vector-tiles', 'map-buildings', 'shared-symbols', 'shared-project', 'infrastructure-tools', 'state', 'project-legend', 'engine', 'storage', 'dialogs', 'cable-crossings', 'render', 'map-contours', 'plan-renderer', 'render-performance', 'mobile-viewer', 'editor-interactions', 'editor-session', 'building-overview', 'svg-context', 'dxf-context', 'plan-export', 'app', 'drawing-files', 'satellite-map', 'photo-plan', 'experience-i18n', 'guide-steps', 'onboarding', 'help-guide', 'project-readiness', 'idle-break', 'firebase-auth', 'project-activity', 'editor-usage', 'account-experience', 'account-profile', 'pro-billing', 'firebase-sync', 'cloud-capacity', 'cad-symbols', 'icon-editor', 'toolbar-menus', 'select-controls', 'tablet-tools', 'feedback', 'welcome-intro']) {
+            for (const name of ['modal-ui', 'busy-ui', 'eps-catalog', 'config', 'editor-polish', 'eps-runtime', 'map-vector-tiles', 'map-buildings', 'shared-symbols', 'shared-project', 'infrastructure-tools', 'state', 'project-legend', 'engine', 'storage', 'dialogs', 'cable-crossings', 'render', 'map-contours', 'plan-renderer', 'plan-geometry', 'render-performance', 'mobile-viewer', 'editor-interactions', 'editor-session', 'building-overview', 'svg-context', 'dxf-context', 'plan-export', 'app', 'drawing-files', 'satellite-map', 'photo-plan', 'experience-i18n', 'guide-steps', 'onboarding', 'help-guide', 'project-readiness', 'idle-break', 'firebase-auth', 'project-activity', 'editor-usage', 'account-experience', 'account-profile', 'pro-billing', 'firebase-sync', 'cloud-capacity', 'cad-symbols', 'icon-editor', 'toolbar-menus', 'select-controls', 'tablet-tools', 'feedback', 'welcome-intro']) {
                 if (name === 'state' && window.goomProduct === 'CCTV') await loadScript(`cctv.js?v=${version}`);
                 if(name==='icon-editor')await window.epsAssetsReady;
                 await loadScript(`${name}.js?v=${version}`);

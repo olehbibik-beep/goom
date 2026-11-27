@@ -219,8 +219,20 @@ function getLargePlanTile(floor) {
     tile={planTile:true,image:raster,x,y,width:right-x,height:bottom-y,signature,scale,ratio:canvasPixelRatio};planTileCache.set(floor,tile);return tile;
 }
 function drawDetectedWalls(target,floor) {
-    const mask=floor.wallMask;
-    if(!floor.previewWalls || !mask)return;
+    if (!floor.previewWalls) return;
+    const geometry = getPlanWallGeometry(floor);
+    if (geometry?.index) {
+        target.save();
+        target.strokeStyle = '#fbbf24';
+        target.lineWidth = 2;
+        target.beginPath();
+        strokeWallIndex(target, geometry.index);
+        target.stroke();
+        target.restore();
+        if (geometry.complete) return;
+    }
+    const mask = floor.wallMask;
+    if (!mask) return;
     let overlay=planMaskPreviewCache.get(mask);
     if(!overlay){
         overlay=document.createElement('canvas');overlay.width=mask.width;overlay.height=mask.height;

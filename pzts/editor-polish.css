@@ -74,3 +74,22 @@
 body > .goom-busy-whale { z-index: 10009; background: #0c11163d; pointer-events: auto; }
 #cloudProjectsModal { justify-content: center; }
 #cloudProjectsModal .cloud-projects-content { flex: 0 1 auto; min-width: 0; width: min(620px, 100%); max-width: 100%; margin: auto; overflow-wrap: anywhere; }
+
+#deviceSelector { width:min(1800px, max(60%, min(100%, 640px))); max-width:100%; grid-template-columns:32px clamp(70px,8vw,128px) clamp(90px,10vw,135px) minmax(0,1fr) 128px; }
+#deviceSelector #activeToolbarMenuName { justify-self:stretch; margin:0; border-radius:5px; display:block; overflow:hidden; text-overflow:ellipsis; }
+#deviceSelector > .ui-select { min-width:0; }
+#deviceSelector > .ui-select .ui-select-trigger { min-width:0; width:100%; }
+#deviceSelector .device-set-window { width:100%; }
+#deviceSelector #btnToggleConnections { min-width:0; justify-content:center; }
+@media(max-width:900px) {
+  #deviceSelector { grid-template-columns:28px clamp(62px,13vw,100px) clamp(80px,15vw,110px) minmax(0,1fr) 36px; }
+  #deviceSelector #btnToggleConnections { padding:4px !important; min-width:0; width:36px; }
+  #deviceSelector #btnToggleConnections .connection-button-label { display:none; }
+}
+.plan-output-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.plan-output-actions .btn-cad { min-width:0; }
+#drawingImportLabel { white-space:nowrap; }
+.plan-theme-tiles { display:flex; flex-wrap:wrap; gap:9px; margin:8px 0 16px; }
+.plan-theme-tiles button { display:grid; place-items:center; width:64px; height:48px; border:1px solid #51555d; background:#292c30; border-radius:7px; cursor:pointer; }
+.plan-theme-tiles button[aria-pressed=true] { outline:2px solid var(--accent, #7dd3fc); outline-offset:1px; }
+.plan-theme-tiles svg { width:46px; height:31px; }

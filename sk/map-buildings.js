@@ -82,7 +82,7 @@ async function fetchMapScene(view,signal){
 }
 async function fetchMapBuildings(view,signal){return(await fetchMapScene(view,signal))?.buildingOutlines||null;}
 async function ensureMapSceneForFloor(floor){
- const meta=floor?.satellite;if(!meta||meta.mapScene||!Array.isArray(meta.center))return;const[lat,lon]=meta.center,zoom=meta.zoom,world=256*2**zoom,sine=Math.sin(lat*Math.PI/180),controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
+ const meta=floor?.satellite;if(!meta||(meta.mapScene&&meta.buildingOutlines)||!Array.isArray(meta.center))return;const[lat,lon]=meta.center,zoom=meta.zoom,world=256*2**zoom,sine=Math.sin(lat*Math.PI/180),controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
  try{const scene=await fetchMapScene({center:{x:(lon+180)/360*world,y:(.5-Math.log((1+sine)/(1-sine))/(4*Math.PI))*world},zoom,width:meta.buildingOutlines?.width||1684,height:meta.buildingOutlines?.height||1191},controller.signal);
   if(floor.satellite===meta&&scene){meta.mapScene=scene.mapScene;if(scene.buildingOutlines)meta.buildingOutlines=scene.buildingOutlines;}
  }catch{}finally{clearTimeout(timer);}

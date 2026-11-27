@@ -169,7 +169,7 @@ function openDetectionSettings(){
     document.getElementById('wallThresholdInput').value=Math.round(floor.wallThreshold/255*1000);
     document.getElementById('planThemeInput').value=getPlanTheme(floor);
     document.getElementById('wallPreviewInput').checked=!!floor.previewWalls;
-    refreshWallSensitivityLabel();window.refreshGoomSelects?.();detectionSettingsModal.style.display='flex';
+    refreshWallSensitivityLabel();refreshPlanThemeTiles();detectionSettingsModal.style.display='flex';
 }
 function cancelWallSettings(){
     clearTimeout(wallPreviewTimer);
@@ -184,7 +184,24 @@ document.getElementById('btnDetectionSettings').addEventListener('click',openDet
 document.getElementById('wallThresholdInput').addEventListener('input',()=>{
     refreshWallSensitivityLabel();clearTimeout(wallPreviewTimer);wallPreviewTimer=setTimeout(applyWallPreview,80);
 });
-document.getElementById('planThemeInput').addEventListener('change',async event=>{
+const planThemeSelect = document.getElementById('planThemeInput');
+const planThemeTiles = [...document.querySelectorAll('#planThemeTiles button')];
+function refreshPlanThemeTiles() {
+    for (const tile of planThemeTiles) {
+        const label = planThemeSelect.querySelector('option[value="' + tile.dataset.planTheme + '"]').textContent;
+        tile.title = label;
+        tile.setAttribute('aria-label', label);
+        tile.setAttribute('aria-pressed', String(planThemeSelect.value === tile.dataset.planTheme));
+    }
+}
+for (const tile of planThemeTiles) tile.onclick = () => {
+    if (planThemeSelect.value === tile.dataset.planTheme) return;
+    planThemeSelect.value = tile.dataset.planTheme;
+    planThemeSelect.dispatchEvent(new Event('change', {bubbles:true}));
+};
+window.addEventListener('goom-language-changed', refreshPlanThemeTiles);
+planThemeSelect.addEventListener('change',async event=>{
+    refreshPlanThemeTiles();
     const session=wallSettingsSession,theme=event.target.value;if(!session)return;
     const endTheme=window.startGoomBusy?.();
     try{await window.goomBusyPaint?.();if(wallSettingsSession!==session||document.getElementById('planThemeInput').value!==theme)return;

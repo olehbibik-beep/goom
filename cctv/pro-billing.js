@@ -15,9 +15,6 @@
         status.classList.toggle('active', active);
         pricing.href = 'https://goom.cz/?lang=' + encodeURIComponent(getGoomLanguage()) + '#pricing';
         pricing.textContent = window.goomUI('Zobrazit tarify', 'View plans', 'Tarife ansehen', 'Смотреть тарифы', 'Zobacz plany');
-        const guide = byId('goomGuideLink');
-        guide.href = getGoomLanguage() === 'ru' ? 'https://goom.cz/guide/ru/' : 'https://goom.cz/guide/';
-        guide.textContent = window.goomUI('Příručka', 'Guide', 'Handbuch', 'Справочник', 'Instrukcja');
         byId('btnOpenToolbarMenuEditor').classList.toggle('pro-lock', !active);
     }
 

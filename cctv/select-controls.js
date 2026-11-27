@@ -89,6 +89,7 @@
         window.clearGoomTooltips?.();
     }
     function enhance(select) {
+        if (select.id === "planThemeInput") return;
         if (widgets.has(select) || select.hidden || select.style.display === 'none' || select.multiple || select.size > 1) return;
         const wrapper = document.createElement('span');
         wrapper.className = 'ui-select';

@@ -94,11 +94,19 @@ let toolbarSavePending = false;
 let toolbarShareRequested = false;
 let preferredSharedToolbarMenuId = null;
 
+function withInfrastructureTools(types) {
+    const tools = [...types];
+    const missing = ['floorPassage','trunkTool'].filter(type => !tools.includes(type));
+    const text = tools.indexOf('textNode');
+    tools.splice(text < 0 ? tools.length : text, 0, ...missing);
+    return tools;
+}
+
 function sanitizeToolbarMenu(menu, id, fallbackName) {
     const deviceTypes = Array.isArray(menu.deviceTypes)
         ? [...new Set(menu.deviceTypes.filter(type => validToolbarMenuTypes.has(type)))] : [];
     const name = typeof menu.name === 'string' ? menu.name.trim().slice(0, 32) : '';
-    const cleaned = { id, name: name || fallbackName, deviceTypes };
+    const cleaned = { id, name: name || fallbackName, deviceTypes:deviceTypes.length ? withInfrastructureTools(deviceTypes) : deviceTypes };
     if (menu.icons && typeof menu.icons === 'object' && !Array.isArray(menu.icons)) {
         cleaned.icons = Object.fromEntries(
             Object.entries(menu.icons)
@@ -356,7 +364,7 @@ function renderToolbarMenuPresets() {
         const preview = editingToolbarMenu?.id === menu.id ? editingToolbarMenu : menu;
         const icons = document.createElement('span');
         icons.className = 'toolbar-menu-preset-icons';
-        menu.deviceTypes.forEach(type => {
+        withInfrastructureTools(menu.deviceTypes).forEach(type => {
             const iconButton = document.createElement('button');
             iconButton.type = 'button';
             iconButton.dataset.type = type;

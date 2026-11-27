@@ -50,7 +50,6 @@ function getCableRoute(cable, from, to) {
 function hitTestCables(canvasX, canvasY, floor, showDeac) {
     const p = {x: canvasX, y: canvasY};
     const devicesById=new Map(floor.devices.map(device=>[device.id,device]));
-    const cablePaint=getCablePaintPlan(floor);
     let nearest = 8 ** 2;
     let hit = null;
     for (let i = floor.cables.length - 1; i >= 0; i--) {
@@ -59,8 +58,8 @@ function hitTestCables(canvasX, canvasY, floor, showDeac) {
         const from = devicesById.get(cable.fromId), to = devicesById.get(cable.toId);
         if (!from || !to || (!showDeac && (from.type === 'deactivated' || to.type === 'deactivated'))) continue;
         const points = from.type === 'textNode' || to.type === 'textNode' ? [from, to] : getCableRoute(cable, from, to);
-        for (const [a,b] of getCablePaintSegments(points,cablePaint.get(cable.id))) {
-            const distance = distToSegmentSquared(p, a, b);
+        for (let index=1; index<points.length; index++) {
+            const distance = distToSegmentSquared(p, points[index-1], points[index]);
             if (!(distance < nearest)) continue;
             nearest = distance;
             hit = cable.id;
